@@ -1,0 +1,12 @@
+{
+  "name": "stepsheet-tests",
+  "private": true,
+  "description": "Automated checks for StepSheet. See tests/README.md.",
+  "scripts": {
+    "test": "node run.js",
+    "sample": "node fixtures/make-sample.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

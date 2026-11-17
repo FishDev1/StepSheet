@@ -31,7 +31,9 @@ python/                   Python edition
 src/                      source of truth
   src.html                the whole app (edit this)
   build.py                regenerates every output above
-  widths.json  header-block.html
+  widths.json  header-block.html  icon/
+tests/                    automated checks (see tests/README.md)
+.github/workflows/        runs the tests on every push
 LICENSE  README.md  NOTICE.md  AI-USAGE.md  CONTRIBUTING.md
 ```
 
@@ -46,6 +48,19 @@ python3 src/build.py
 That rewrites `StepSheet.html`, the PWA files, the extension, and the Python
 edition's bundled copy, and bumps the extension version. Bump `CACHE` in
 `src/build.py` when you change the app so installed PWAs refresh.
+
+## Testing
+
+About 120 browser checks (Playwright, headless Chromium) plus Python edition checks:
+
+```
+cd tests && npm install && npx playwright install chromium   # once
+npm test                                                     # after python3 src/build.py
+```
+
+They cover editing, `.soe` round trips (nothing lost on save), PDFs, Copilot paste,
+phones, and the installable app working offline. Details in `tests/README.md`.
+GitHub Actions runs them on every push (`.github/workflows/test.yml`).
 
 ## The .soe format
 

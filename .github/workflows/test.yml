@@ -1,0 +1,24 @@
+# Runs the StepSheet tests on every push and pull request (GitHub Actions).
+# Fails if the committed build is out of date with src/, or if any check fails.
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Rebuild and check the committed files are current
+        run: |
+          python src/build.py
+          git checkout -- extension/manifest.json
+          git diff --exit-code -- StepSheet.html index.html sw.js manifest.webmanifest extension/app.js extension/editor.html || (echo "Built files are out of date: run python src/build.py and commit." && exit 1)
+      - name: Install test tools
+        run: |
+          pip install -r python/requirements.txt
+          cd tests && npm install && npx playwright install --with-deps chromium
+      - name: Run tests
+        run: cd tests && npm test
