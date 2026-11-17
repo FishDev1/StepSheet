@@ -56,3 +56,6 @@ desktop.ini
 src/artifact.html
 __pycache__/
 *.pyc
+
+# The made-up test sample (no real content) is the one .soe allowed in the repo.
+!tests/fixtures/sample.soe
