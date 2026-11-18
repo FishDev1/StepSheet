@@ -65,6 +65,14 @@ class SoeFiles(unittest.TestCase):
         once = self.doc.to_xml()
         self.assertEqual(once, Document.load(once).to_xml())
 
+    def test_cdata_end_marker_in_text(self):
+        d = self.doc
+        d.tasks[0].caption = "Hold 3 PSI ]]> 5 min"
+        d.tasks[0].caption_es = "Mantenga ]]> 5 min"
+        again = Document.load(d.to_xml())
+        self.assertEqual(again.tasks[0].caption, "Hold 3 PSI ]]> 5 min")
+        self.assertEqual(again.tasks[0].caption_es, "Mantenga ]]> 5 min")
+
     def test_pdf_file_names_match_app(self):
         from stepsheet.__main__ import pdf_file_name
         d = self.doc

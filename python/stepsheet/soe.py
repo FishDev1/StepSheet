@@ -232,7 +232,7 @@ class Document:
 
         def cd_keep(tag, val):  # always write CDATA, even when empty (matches original)
             val = "" if val is None else str(val)
-            return f"<{tag}><![CDATA[{val}]]></{tag}>"
+            return f"<{tag}><![CDATA[{val.replace(']]>', ']]]]><![CDATA[>')}]]></{tag}>"
 
         def X(bag, path):  # unknown tags kept from the opened file
             return "".join((bag or {}).get(path, []))
