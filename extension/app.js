@@ -906,7 +906,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 40${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 41${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -973,18 +973,29 @@ $("#soeInput").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) o
 // editable: orig is the image id of the clean photo, items are the marks in that photo's pixels.
 //   {t:"circle"|"box", x,y,w,h, c}   {t:"arrow", x1,y1,x2,y2, c}   {t:"pen", pts:[[x,y],...], c}
 //   {t:"img", id, x,y,w,h, c}  (an inserted picture; id is an image in D.images)
-const MK_TOOLS=["circle","box","arrow","pen","select"];
+const MK_TOOLS=["circle","box","arrow","pen","text","select"];
+const MK_COLORS=["#e5191c","#1f6fe0","#ffd60a"];
+// Text labels: the chosen color is the highlight; the words are white on red or blue, red on yellow.
+const mkInk=c=>c==="#ffd60a"?"#e5191c":c==="#ffffff"?"#111111":"#ffffff";
+const mkFont=sz=>`700 ${sz}px Arial, "Helvetica Neue", Helvetica, sans-serif`;
+let mkMeasureCtx=null;
+function mkTextBox(it){ const x=mkMeasureCtx||(mkMeasureCtx=document.createElement("canvas").getContext("2d")); x.font=mkFont(it.size);
+  const lines=String(it.s||"").split("\n"), pad=it.size*0.38, lh=it.size*1.18; const w=Math.max(...lines.map(l=>x.measureText(l).width))+pad*2;
+  return {x:it.x,y:it.y,w,h:lines.length*lh+pad*2-it.size*0.18,lines,pad,lh}; }
 let MK=null;
 const mkLW=(W,H)=>Math.max(3,Math.round(Math.max(W,H)*0.0065));
 function mkDecode(id){ return createImageBitmap(new Blob([b64ToBytes(D.images[id])],{type:"image/jpeg"})); }
 function mkNorm(it){ return it.w<0||it.h<0 ? {...it, x:Math.min(it.x,it.x+it.w), y:Math.min(it.y,it.y+it.h), w:Math.abs(it.w), h:Math.abs(it.h)} : it; }
-function mkBox(it){ if(it.t==="arrow") return {x:Math.min(it.x1,it.x2),y:Math.min(it.y1,it.y2),w:Math.abs(it.x2-it.x1),h:Math.abs(it.y2-it.y1)};
+function mkBox(it){ if(it.t==="text"){ const b=mkTextBox(it); return {x:b.x,y:b.y,w:b.w,h:b.h}; } if(it.t==="arrow") return {x:Math.min(it.x1,it.x2),y:Math.min(it.y1,it.y2),w:Math.abs(it.x2-it.x1),h:Math.abs(it.y2-it.y1)};
   if(it.t==="pen"){ const xs=it.pts.map(p=>p[0]), ys=it.pts.map(p=>p[1]); const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}; }
   const n=mkNorm(it); return {x:n.x,y:n.y,w:n.w,h:n.h}; }
 // Draw the marks onto a 2D context whose units are photo pixels.
 function mkDraw(x,items,lw,insets){
   for(const raw of items){ const it=mkNorm(raw); x.save(); x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
     x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=lw*0.8;
+    if(it.t==="text"){ const b=mkTextBox(it), r=it.size*0.22; x.shadowBlur=lw*0.9; x.beginPath(); x.roundRect?x.roundRect(b.x,b.y,b.w,b.h,r):x.rect(b.x,b.y,b.w,b.h); x.fill();
+      x.shadowBlur=0; x.fillStyle=mkInk(it.c); x.font=mkFont(it.size); x.textBaseline="top";
+      b.lines.forEach((l,j)=>x.fillText(l,b.x+b.pad,b.y+b.pad+j*b.lh)); x.restore(); continue; }
     if(it.t==="img"){ const b=insets.get(it.id); x.shadowBlur=lw*1.5; if(b) x.drawImage(b,it.x,it.y,it.w,it.h); else { x.fillStyle="#888"; x.fillRect(it.x,it.y,it.w,it.h); }
       x.shadowBlur=0; x.lineWidth=lw*0.7; x.strokeRect(it.x,it.y,it.w,it.h); }
     else if(it.t==="box") x.strokeRect(it.x,it.y,it.w,it.h);
@@ -1004,7 +1015,7 @@ async function markupOpen(i){ if(MK) return;
   let orig; try{ orig=await mkDecode(origId); }catch(e){ toast("Couldn't open that picture: "+e.message,5000); return; }
   const insets=new Map(); for(const it of items) if(it.t==="img"&&D.images[it.id]&&!insets.has(it.id)){ try{ insets.set(it.id,await mkDecode(it.id)); }catch(e){} }
   const el=$("#mk"); MK={i,origId,orig,W:orig.width,H:orig.height,items,start:JSON.stringify(items),undo:[],tool:ST.mk_tool||"circle",color:ST.mk_color||"#e5191c",sel:-1,drag:null,insets,ret:document.activeElement};
-  MK.lw=mkLW(MK.W,MK.H); $("#mkTitle").textContent=`Mark up step ${i+1}`;
+  if(!MK_COLORS.includes(MK.color)) MK.color=MK_COLORS[0]; MK.lw=mkLW(MK.W,MK.H); $("#mkTitle").textContent=`Mark up step ${i+1}`;
   el.hidden=false; document.body.style.overflow="hidden"; mkSetTool(MK.tool); mkSetColor(MK.color); mkFit(); mkUpdate();
   setTimeout(()=>el.querySelector(`[data-mkt="${MK.tool}"]`)?.focus(),0); }
 function mkFit(){ if(!MK) return; const st=$("#mkStage"), cv=$("#mkCanvas"), r=st.getBoundingClientRect(), pad=20;
@@ -1016,7 +1027,8 @@ function mkRender(){ if(!MK) return; const cv=$("#mkCanvas"), x=cv.getContext("2
   if(MK.sel>=0&&MK.items[MK.sel]){ const it=MK.items[MK.sel], b=mkBox(it), u=1/MK.scale; x.save(); x.lineWidth=1.5*u; x.setLineDash([6*u,4*u]); x.strokeStyle="#fff"; x.shadowColor="rgba(0,0,0,.8)"; x.shadowBlur=3*u;
     x.strokeRect(b.x-6*u,b.y-6*u,b.w+12*u,b.h+12*u); x.setLineDash([]);
     for(const h of mkHandles(it)){ x.beginPath(); x.arc(h.x,h.y,9*u,0,Math.PI*2); x.fillStyle="#fff"; x.fill(); x.lineWidth=2*u; x.strokeStyle="#2f7be0"; x.stroke(); } x.restore(); } }
-function mkHandles(it){ if(it.t==="pen") return []; if(it.t==="arrow") return [{k:"a",x:it.x1,y:it.y1},{k:"b",x:it.x2,y:it.y2}];
+function mkHandles(it){ if(it.t==="pen") return [];
+  if(it.t==="text"){ const b=mkBox(it); return [{k:"nw",x:b.x,y:b.y},{k:"ne",x:b.x+b.w,y:b.y},{k:"sw",x:b.x,y:b.y+b.h},{k:"se",x:b.x+b.w,y:b.y+b.h}]; } if(it.t==="arrow") return [{k:"a",x:it.x1,y:it.y1},{k:"b",x:it.x2,y:it.y2}];
   const n=mkNorm(it); return [{k:"nw",x:n.x,y:n.y},{k:"ne",x:n.x+n.w,y:n.y},{k:"sw",x:n.x,y:n.y+n.h},{k:"se",x:n.x+n.w,y:n.y+n.h}]; }
 function mkPt(e){ const r=$("#mkCanvas").getBoundingClientRect(); return {x:(e.clientX-r.left)/MK.scale, y:(e.clientY-r.top)/MK.scale}; }
 function mkSegDist(p,a,b){ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy; let u=L?((p.x-a[0])*dx+(p.y-a[1])*dy)/L:0; u=Math.max(0,Math.min(1,u)); return Math.hypot(p.x-a[0]-u*dx,p.y-a[1]-u*dy); }
@@ -1024,6 +1036,7 @@ function mkSegDist(p,a,b){ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy; let 
 function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
   for(let k=MK.items.length-1;k>=0;k--){ const it=mkNorm(MK.items[k]);
     if(it.t==="arrow"){ if(mkSegDist(p,[it.x1,it.y1],[it.x2,it.y2])<=tol) return k; continue; }
+    if(it.t==="text"){ const b=mkBox(it); if(p.x>=b.x-tol&&p.x<=b.x+b.w+tol&&p.y>=b.y-tol&&p.y<=b.y+b.h+tol) return k; continue; }
     if(it.t==="pen"){ const P=it.pts; for(let j=0;j<P.length;j++) if(mkSegDist(p,P[j],P[Math.min(j+1,P.length-1)])<=tol) return k; continue; }
     const inBox=p.x>=it.x-tol&&p.x<=it.x+it.w+tol&&p.y>=it.y-tol&&p.y<=it.y+it.h+tol; if(!inBox) continue;
     if(inside||it.t==="img") { if(it.t!=="img"||inside||p.x<it.x+tol||p.x>it.x+it.w-tol||p.y<it.y+tol||p.y>it.y+it.h-tol) return k; continue; }
@@ -1031,10 +1044,37 @@ function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
     if(it.t==="circle"){ const rx=it.w/2, ry=it.h/2, cx=it.x+rx, cy=it.y+ry; const d=Math.hypot((p.x-cx)/Math.max(rx,1),(p.y-cy)/Math.max(ry,1)); if(Math.abs(d-1)*Math.min(rx,ry)<=tol) return k; } }
   return -1; }
 function mkPush(){ MK.undo.push(JSON.stringify(MK.items)); if(MK.undo.length>100) MK.undo.shift(); }
-function mkUpdate(){ const el=$("#mk"); el.querySelector('[data-mk="undo"]').disabled=!MK.undo.length; el.querySelector('[data-mk="del"]').disabled=MK.sel<0; el.querySelector('[data-mk="clear"]').disabled=!MK.items.length; mkRender(); }
-function mkSetTool(tl){ MK.tool=tl; ST.mk_tool=tl; saveSettings(); $("#mk").dataset.tool=tl; $("#mk").querySelectorAll("[data-mkt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mkt===tl))); }
+function mkUpdate(){ const el=$("#mk"); { const it=MK.items[MK.sel], on=(it&&it.t==="text")||MK.tool==="text", g=el.querySelector(".mk-tsize"); g.hidden=!on;
+    const L=Math.max(MK.W,MK.H), i=it&&it.t==="text"?MK_TS.findIndex(k=>Math.abs(k*L-it.size)<=1):(ST.mk_ts??2);
+    g.querySelector('[data-mk="tsmaller"]').disabled=it&&it.t==="text"?it.size<=Math.max(12,Math.round(MK_TS[0]*L)):i<=0;
+    g.querySelector('[data-mk="tbigger"]').disabled=it&&it.t==="text"?it.size>=Math.round(MK_TS.at(-1)*L):i>=MK_TS.length-1; } el.querySelector('[data-mk="undo"]').disabled=!MK.undo.length; el.querySelector('[data-mk="del"]').disabled=MK.sel<0; el.querySelector('[data-mk="clear"]').disabled=!MK.items.length; mkRender(); }
+function mkSetTool(tl){ MK.tool=tl; ST.mk_tool=tl; saveSettings(); $("#mk").dataset.tool=tl; $("#mk").querySelectorAll("[data-mkt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mkt===tl))); if(MK.scale) mkUpdate(); }
 function mkSetColor(c){ MK.color=c; ST.mk_color=c; saveSettings(); $("#mk").querySelectorAll("[data-mkc]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.mkc===c)));
   if(MK.sel>=0&&MK.items[MK.sel]&&MK.items[MK.sel].c!==c){ mkPush(); MK.items[MK.sel].c=c; mkUpdate(); } }
+function mkAskText(init=""){ return new Promise(res=>{ let done=false;
+  modal(`<h2>${init?"Edit label":"Add a label"}</h2><label class="mk-tlab">Text<textarea id="mkTxt" rows="2" maxlength="200" placeholder="e.g. TORQUE TO 35 IN-LBS">${esc(init)}</textarea></label>
+    <p class="hint">Enter adds the label. Shift+Enter starts a new line.</p>
+    <div class="acts"><button class="lbtn" data-r="0">Cancel</button>${init?'<button class="lbtn danger" data-r="del">Delete label</button>':""}<button class="lbtn primary" data-r="1">${init?"Save":"Add"}</button></div>`,(d,close)=>{
+    const ta=d.querySelector("#mkTxt"), fin=v=>{ if(done) return; done=true; close(); res(v); };
+    d.addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; fin(b.dataset.r==="1"?ta.value.replace(/\s+$/,""):b.dataset.r==="del"?"\u0000del":null); });
+    ta.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); fin(ta.value.replace(/\s+$/,"")); } else if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); fin(null); } });
+    setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },30); }); }); }
+async function mkEditText(k){ const it=MK.items[k]; if(!it||it.t!=="text") return; const v=await mkAskText(it.s); if(!MK) return;
+  if(v==="\u0000del"){ MK.sel=k; mkDelete(); return; }
+  if(v===null||v===it.s) return; mkPush(); if(!v.trim()){ MK.items.splice(k,1); MK.sel=-1; } else it.s=v; mkUpdate(); }
+async function mkAddText(p){ const v=await mkAskText(""); if(!MK||v===null||!v.trim()) return;
+  const size=mkTextSize(); const it={t:"text",s:v,x:p.x,y:p.y,size,c:MK.color};
+  const b=mkTextBox(it); it.x=Math.max(0,Math.min(p.x-b.w/2,MK.W-b.w)); it.y=Math.max(0,Math.min(p.y-b.h/2,MK.H-b.h));
+  mkPush(); MK.items.push(it); MK.sel=MK.items.length-1; mkUpdate(); }
+// Label size: a share of the photo's long side, so labels look the same on every photo.
+const MK_TS=[0.022,0.028,0.034,0.042,0.052,0.064,0.08];
+function mkTextSize(){ const k=MK_TS[Math.max(0,Math.min(MK_TS.length-1,ST.mk_ts??2))]; return Math.max(12,Math.round(Math.max(MK.W,MK.H)*k)); }
+function mkResizeText(dir){ const it=MK.items[MK.sel];
+  if(it&&it.t==="text"){ const L=Math.max(MK.W,MK.H); let i=MK_TS.findIndex(k=>k*L>=it.size-0.5); if(i<0) i=MK_TS.length-1;
+    if(Math.abs(MK_TS[i]*L-it.size)>1&&dir<0) i++; i=Math.max(0,Math.min(MK_TS.length-1,i+dir));
+    const b0=mkTextBox(it), cx=b0.x+b0.w/2, cy=b0.y+b0.h/2, ns=Math.max(12,Math.round(MK_TS[i]*L)); if(ns===it.size) return;
+    mkPush(); it.size=ns; const b1=mkTextBox(it); it.x=cx-b1.w/2; it.y=cy-b1.h/2; ST.mk_ts=i; saveSettings(); mkUpdate(); return; }
+  ST.mk_ts=Math.max(0,Math.min(MK_TS.length-1,(ST.mk_ts??2)+dir)); saveSettings(); mkUpdate(); toast(`Next label: size ${ST.mk_ts+1} of ${MK_TS.length}`,1600); }
 function mkDelete(){ if(MK.sel<0) return; mkPush(); MK.items.splice(MK.sel,1); MK.sel=-1; mkUpdate(); }
 async function mkInsert(file){ if(!file||!file.type||!file.type.startsWith("image/")){ toast("That isn't a picture."); return; }
   try{ const bytes=await toJpeg(file,1400,0.88); const id=newId(); D.images[id]=bytesToB64(bytes); const b=await mkDecode(id); MK.insets.set(id,b);
@@ -1061,6 +1101,8 @@ async function mkClose(save){
     else if(b.dataset.mkc) mkSetColor(b.dataset.mkc);
     else if(b.dataset.mk==="undo"){ if(MK.undo.length){ MK.items=JSON.parse(MK.undo.pop()); MK.sel=-1; mkUpdate(); } }
     else if(b.dataset.mk==="del") mkDelete();
+    else if(b.dataset.mk==="tsmaller") mkResizeText(-1);
+    else if(b.dataset.mk==="tbigger") mkResizeText(1);
     else if(b.dataset.mk==="clear"){ if(MK.items.length){ mkPush(); MK.items=[]; MK.sel=-1; mkUpdate(); toast("All marks cleared. Undo brings them back."); } }
     else if(b.dataset.mk==="pic"){ $("#mkPic").value=""; $("#mkPic").click(); }
     else if(b.dataset.mk==="done") mkClose(true);
@@ -1070,7 +1112,10 @@ async function mkClose(save){
     const p=mkPt(e), tol=Math.max(MK.lw*1.5,14/MK.scale), hr=22/MK.scale; let d=null;
     if(MK.sel>=0){ const it=MK.items[MK.sel]; const h=mkHandles(it).find(h=>Math.hypot(p.x-h.x,p.y-h.y)<=hr);
       if(h) d={kind:"handle",h:h.k}; else if(mkHit(p,true)===MK.sel||(()=>{ const b=mkBox(it); return p.x>=b.x-tol&&p.x<=b.x+b.w+tol&&p.y>=b.y-tol&&p.y<=b.y+b.h+tol; })()) d={kind:"move"}; }
+    const wasSel=MK.sel;
     if(!d){ const k=MK.tool==="pen"?-1:mkHit(p,MK.tool==="select"); if(k>=0){ MK.sel=k; d={kind:"move"}; } }
+    if(!d&&MK.tool==="text"){ MK.sel=-1; mkUpdate(); MK.drag={kind:"textnew",start:p}; return; }
+    if(d) d.wasSel=wasSel===MK.sel;
     if(!d&&MK.tool==="select"){ MK.sel=-1; mkUpdate(); return; }
     if(d){ d.start=p; d.before=JSON.stringify(MK.items); d.orig=JSON.parse(JSON.stringify(MK.items[MK.sel])); MK.drag=d; mkUpdate(); return; }
     const c=MK.color, before=JSON.stringify(MK.items);
@@ -1083,6 +1128,9 @@ async function mkClose(save){
       else { it.w=dx; it.h=dy; if(e.shiftKey){ const s=Math.max(Math.abs(dx),Math.abs(dy)); it.w=Math.sign(dx||1)*s; it.h=Math.sign(dy||1)*s; } } }
     else { const o=d.orig, it=MK.items[MK.sel];
       if(d.kind==="move"){ if(o.t==="arrow"){ it.x1=o.x1+dx; it.y1=o.y1+dy; it.x2=o.x2+dx; it.y2=o.y2+dy; } else if(o.t==="pen") it.pts=o.pts.map(q=>[q[0]+dx,q[1]+dy]); else { it.x=o.x+dx; it.y=o.y+dy; } }
+      else if(o.t==="text"){ const b0=mkTextBox(o); const ax=d.h.includes("w")?b0.x+b0.w:b0.x, ay=d.h.includes("n")?b0.y+b0.h:b0.y;
+        const nw=Math.max(10,(d.h.includes("w")?-1:1)*(p.x-ax)); const k=nw/b0.w; it.size=Math.max(8,Math.round(o.size*k)); const b1=mkTextBox(it);
+        it.x=d.h.includes("w")?ax-b1.w:ax; it.y=d.h.includes("n")?ay-b1.h:ay; }
       else if(o.t==="arrow"){ if(d.h==="a"){ it.x1=o.x1+dx; it.y1=o.y1+dy; } else { it.x2=o.x2+dx; it.y2=o.y2+dy; } }
       else { const n=mkNorm(o); let x0=n.x, y0=n.y, x1=n.x+n.w, y1=n.y+n.h;
         if(d.h.includes("w")) x0+=dx; else x1+=dx; if(d.h.includes("n")) y0+=dy; else y1+=dy;
@@ -1090,6 +1138,9 @@ async function mkClose(save){
         Object.assign(it,{x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)}); } }
     mkRender(); });
   const up=e=>{ const d=MK&&MK.drag; if(!d) return; MK.drag=null; try{ cv.releasePointerCapture(e.pointerId); }catch(_){}
+    if(d.kind==="textnew"){ if(e.type==="pointerup") mkAddText(d.start); return; }
+    if(d.kind==="move"&&JSON.stringify(MK.items)===d.before){ const it=MK.items[MK.sel];
+      if(it&&it.t==="text"&&e.type==="pointerup"&&(d.wasSel||MK.tool==="text")){ mkUpdate(); mkEditText(MK.sel); return; } }
     if(d.kind==="new"){ const it=MK.items.at(-1), b=mkBox(it), small=Math.max(6,10/MK.scale);
       if(it.t==="pen"?(it.pts.length<2&&e.type!=="pointerup"):(Math.max(b.w,b.h)<small)){ MK.items.pop(); const k=mkHit(d.start,false); if(k>=0) MK.sel=k; mkUpdate(); return; }
       if(it.t!=="pen"&&it.t!=="arrow") Object.assign(it,mkNorm(it));
@@ -1111,7 +1162,7 @@ async function mkClose(save){
     else if(e.key==="Tab"){ const f=[...el.querySelectorAll("button:not(:disabled)")]; const i=f.indexOf(document.activeElement);
       if(e.shiftKey&&i<=0){ e.preventDefault(); f.at(-1).focus(); } else if(!e.shiftKey&&i===f.length-1){ e.preventDefault(); f[0].focus(); } }
   },true);
-  document.addEventListener("paste",e=>{ if(!MK) return; const item=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith("image/")); e.preventDefault(); e.stopImmediatePropagation(); if(item) mkInsert(item.getAsFile()); },true);
+  document.addEventListener("paste",e=>{ if(!MK||!$("#modal").hidden) return; const item=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith("image/")); e.preventDefault(); e.stopImmediatePropagation(); if(item) mkInsert(item.getAsFile()); },true);
 })();
 let dragFrom=-1;
 document.addEventListener("dragstart",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; dragFrom=+h.dataset.drag; e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain","step "+(dragFrom+1)); }catch(_){}

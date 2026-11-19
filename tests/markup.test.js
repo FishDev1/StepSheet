@@ -38,15 +38,47 @@ run("photo markup", async b => {
   const sc = await p.evaluate(() => MK.scale);   // screen px per photo px
   ok(Math.abs(rs.w - moved.w - 40 / sc) < 2 && Math.abs(rs.h - moved.h - 30 / sc) < 2 && Math.abs(rs.x - moved.x) < 1, "Corner handle resizes the selected mark");
   // recolor the selected mark
-  await p.click('[data-mkc="#ffd60a"]');
-  ok(await p.evaluate(() => MK.items[1].c === "#ffd60a"), "Color button recolors the selected mark");
+  await p.click('[data-mkc="#1f6fe0"]');
+  ok(await p.evaluate(() => MK.items[1].c === "#1f6fe0"), "Color button recolors the selected mark");
   // delete, then undo brings it back
   await p.click('#mk [data-mk="del"]');
   ok(await p.evaluate(() => MK.items.length === 3 && MK.sel === -1), "Delete removes the selected mark");
   await p.click('#mk [data-mk="undo"]');
-  ok(await p.evaluate(() => MK.items.length === 4 && MK.items[1].c === "#ffd60a"), "Undo brings it back");
+  ok(await p.evaluate(() => MK.items.length === 4 && MK.items[1].c === "#1f6fe0"), "Undo brings it back");
   await p.keyboard.press("Control+z");
   ok(await p.evaluate(() => MK.items[1].c === "#e5191c"), "Ctrl+Z undoes the color change");
+  // colors are red, blue, yellow
+  ok(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll("#mk [data-mkc]")].map(b => b.getAttribute("aria-label")))) === '["Red","Blue","Yellow"]', "Colors are red, blue and yellow");
+  // text labels: blue = white on blue, yellow = red on yellow
+  await p.click('[data-mkc="#1f6fe0"]'); await p.click('[data-mkt="text"]'); await p.mouse.click(...at(.30, .55));
+  await p.waitForSelector("#mkTxt"); await p.fill("#mkTxt", "TORQUE TO 35 IN-LBS"); await p.keyboard.press("Enter");
+  let lab = await p.evaluate(() => { const i = MK.items.at(-1); return { t: i.t, s: i.s, c: i.c, ink: mkInk(i.c), sel: MK.sel === MK.items.length - 1, inside: (() => { const b = mkBox(i); return b.x >= 0 && b.y >= 0 && b.x + b.w <= MK.W + 0.5 && b.y + b.h <= MK.H + 0.5; })() }; });
+  ok(lab.t === "text" && lab.s === "TORQUE TO 35 IN-LBS" && lab.c === "#1f6fe0" && lab.ink === "#ffffff" && lab.sel && lab.inside, "Text tool adds a label: white text on blue, inside the photo");
+  const pix = await p.evaluate(() => { const i = MK.items.at(-1), b = mkBox(i), cv = document.querySelector("#mkCanvas"), k = MK.scale * MK.dpr, x = cv.getContext("2d");
+    const d = x.getImageData(Math.round((b.x + 3) * k), Math.round((b.y + b.h / 2) * k), 1, 1).data; return [d[0], d[1], d[2]]; });
+  ok(pix[2] > 180 && pix[0] < 90, "Label background draws blue " + JSON.stringify(pix));
+  await p.click('[data-mkc="#ffd60a"]');
+  ok(await p.evaluate(() => { const i = MK.items.at(-1); return i.c === "#ffd60a" && mkInk(i.c) === "#e5191c"; }), "Yellow label has red text");
+  // tap the selected label to edit its words
+  const lb = await p.evaluate(() => { const b = mkBox(MK.items.at(-1)), r = document.querySelector("#mkCanvas").getBoundingClientRect(); return [r.left + (b.x + b.w / 2) * MK.scale, r.top + (b.y + b.h / 2) * MK.scale]; });
+  await p.click('[data-mkt="select"]'); await p.mouse.click(...lb);
+  await p.waitForSelector("#mkTxt"); await p.fill("#mkTxt", "TORQUE TO 40 IN-LBS"); await p.click('#dlg [data-r="1"]');
+  ok(await p.evaluate(() => MK.items.at(-1).s === "TORQUE TO 40 IN-LBS"), "Tapping a selected label edits its text");
+  const sz0 = await p.evaluate(() => MK.items.at(-1).size);
+  const lse = await p.evaluate(() => { const b = mkBox(MK.items.at(-1)), r = document.querySelector("#mkCanvas").getBoundingClientRect(); return [r.left + (b.x + b.w) * MK.scale, r.top + (b.y + b.h) * MK.scale]; });
+  await drag(lse, [lse[0] + 60, lse[1] + 10]);
+  ok(await p.evaluate(s0 => MK.items.at(-1).size > s0, sz0), "Dragging a label's corner makes the text bigger");
+  // Smaller / Bigger buttons
+  ok(await p.locator("#mk .mk-tsize").isVisible(), "Smaller/Bigger buttons show while a label is selected");
+  const s1 = await p.evaluate(() => MK.items.at(-1).size);
+  await p.click('#mk [data-mk="tbigger"]'); const s2 = await p.evaluate(() => MK.items.at(-1).size);
+  await p.click('#mk [data-mk="tsmaller"]'); await p.click('#mk [data-mk="tsmaller"]'); const s3 = await p.evaluate(() => MK.items.at(-1).size);
+  ok(s2 > s1 && s3 < s2, `Bigger and Smaller change the label size (${s1} -> ${s2} -> ${s3})`);
+  for (let k = 0; k < 8; k++) if (!(await p.locator('#mk [data-mk="tsmaller"]').isDisabled())) await p.click('#mk [data-mk="tsmaller"]');
+  ok(await p.locator('#mk [data-mk="tsmaller"]').isDisabled(), "Smaller stops at the smallest size");
+  // remove the label again so the counts below stay the same
+  await p.click('#mk [data-mk="del"]');
+  await p.click('[data-mkc="#e5191c"]');
   // insert a picture
   const inset = path.join(__dirname, "fixtures", "_inset.png");
   await p.evaluate(async () => { const c = document.createElement("canvas"); c.width = 400; c.height = 300; const x = c.getContext("2d"); x.fillStyle = "#08f"; x.fillRect(0, 0, 400, 300);
