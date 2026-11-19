@@ -16,6 +16,7 @@ A .soe file is ISO-8859-1 XML:
 from __future__ import annotations
 
 import base64
+import json
 import io
 import os
 import random
@@ -311,6 +312,19 @@ class Document:
         ids = {t.image_id for t in self.tasks if t.image_id}
         if self.logo_id:
             ids.add(self.logo_id)
+        # A marked-up step (made in the web app) also needs its clean original photo and any
+        # inserted pictures. They are listed in the step's <markup> JSON, kept verbatim in extra.
+        for t in self.tasks:
+            for raw in (t.extra or {}).get("Task", []):
+                if not raw.startswith("<markup>"):
+                    continue
+                try:
+                    m = json.loads(ET.fromstring(raw).text or "{}")
+                except Exception:
+                    continue
+                if m.get("orig"):
+                    ids.add(m["orig"])
+                ids.update(i["id"] for i in m.get("items", []) if i.get("t") == "img" and i.get("id"))
         return ids
 
     def add_image(self, data: bytes, max_px: int = 1600, quality: int = 85) -> str:

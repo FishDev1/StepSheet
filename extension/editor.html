@@ -333,6 +333,34 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   .tog{font-size:12px!important;padding:2px 7px 2px 5px;gap:4px}
   .meta{gap:5px}
 }
+
+/* ---- Photo markup editor ---- */
+.mk,.mk *,.thumb,.thumb *{-webkit-tap-highlight-color:transparent}
+.mk{position:fixed;inset:0;z-index:35;background:#14181e;color:#eef1f5;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+.mk[hidden]{display:none}
+.mk-top{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #2c333d}
+.mk-top h2{flex:1;margin:0;font-size:16px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-btn{min-height:44px;padding:0 16px;border-radius:9px;border:1px solid #4a5462;background:#232a34;color:#eef1f5;font:inherit;font-size:15px;cursor:pointer}
+.mk-btn.primary{background:#2f7be0;border-color:#2f7be0;color:#fff;font-weight:600}
+.mk-btn:focus-visible,.mk-tool:focus-visible,.mk-sw:focus-visible{outline:3px solid #7fb0ee;outline-offset:2px}
+.mk-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+#mkCanvas{touch-action:none;display:block;box-shadow:0 2px 14px rgba(0,0,0,.5);cursor:crosshair;user-select:none;-webkit-user-select:none}
+.mk[data-tool="select"] #mkCanvas{cursor:default}
+.mk-tools{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;padding:8px 10px 10px;border-top:1px solid #2c333d}
+.mk-group{display:flex;gap:6px;align-items:center}
+.mk-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:60px;height:56px;border-radius:10px;border:1px solid transparent;background:transparent;color:#d6dbe2;font:inherit;font-size:12px;cursor:pointer}
+.mk-tool svg{width:24px;height:24px}
+.mk-tool[aria-pressed="true"]{background:#2f7be0;color:#fff}
+.mk-tool:disabled{opacity:.35;cursor:default}
+.mk-sw{width:36px;height:36px;border-radius:50%;background:var(--c);border:3px solid #14181e;box-shadow:0 0 0 2px #59626f;cursor:pointer}
+.mk-sw[aria-checked="true"]{box-shadow:0 0 0 3px #eef1f5}
+@media (max-width:560px){ .mk-tool{width:52px;height:52px;font-size:11px} .mk-tools{gap:8px 10px} .mk-btn{padding:0 12px} }
+@media (max-height:520px) and (orientation:landscape){ .mk{flex-direction:row;flex-wrap:wrap} .mk-top{width:100%;padding:4px 10px} .mk-stage{flex:1} .mk-tools{flex-direction:column;flex-wrap:nowrap;border-top:none;border-left:1px solid #2c333d;overflow:auto;max-height:calc(100% - 54px)} .mk-group{flex-direction:column} .mk-tool{height:48px} }
+.thumb .mkbtn{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:4px;padding:3px 8px;min-height:26px;border-radius:999px;border:none;background:rgba(0,0,0,.66);color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.thumb .mkbtn:hover{background:rgba(0,0,0,.82)}
+.thumb .mkbtn svg{width:13px;height:13px}
+@media (pointer:coarse){ .thumb .mkbtn{min-height:34px;padding:4px 11px;font-size:13px} }
 </style></head><body>
 
 <header class="bar">
@@ -375,6 +403,16 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   <button class="rowtool" data-act="del">✕<span>Delete</span></button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
+<div class="mk" id="mk" hidden role="dialog" aria-modal="true" aria-labelledby="mkTitle">
+  <div class="mk-top"><button type="button" class="mk-btn" data-mk="cancel">Cancel</button><h2 id="mkTitle">Mark up</h2><button type="button" class="mk-btn" data-mk="clear">Clear all</button><button type="button" class="mk-btn primary" data-mk="done">Done</button></div>
+  <div class="mk-stage" id="mkStage"><canvas id="mkCanvas" aria-label="Photo. Drag on it to draw the selected mark."></canvas></div>
+  <div class="mk-tools" role="toolbar" aria-label="Markup tools">
+    <div class="mk-group"><button type="button" class="mk-tool" data-mkt="circle" aria-pressed="false" title="Circle"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="8.5" ry="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Circle</span></button><button type="button" class="mk-tool" data-mkt="box" aria-pressed="false" title="Box"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Box</span></button><button type="button" class="mk-tool" data-mkt="arrow" aria-pressed="false" title="Arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L18 6M18 6h-7M18 6v7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Arrow</span></button><button type="button" class="mk-tool" data-mkt="pen" aria-pressed="false" title="Draw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18c3-6 5-9 7-9s1 6 3 6 3-4 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Draw</span></button><button type="button" class="mk-tool" data-mkt="select" aria-pressed="false" title="Move"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l11 7-5 1.3L9.7 18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Move</span></button><button type="button" class="mk-tool" data-mk="pic" title="Insert picture"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="11" width="7.5" height="6" rx="1" fill="currentColor"/></svg><span>Picture</span></button></div>
+    <div class="mk-group mk-colors" role="radiogroup" aria-label="Color"><button type="button" class="mk-sw" data-mkc="#e5191c" role="radio" aria-checked="true" aria-label="Red" style="--c:#e5191c"></button><button type="button" class="mk-sw" data-mkc="#ffd60a" role="radio" aria-checked="false" aria-label="Yellow" style="--c:#ffd60a"></button><button type="button" class="mk-sw" data-mkc="#ffffff" role="radio" aria-checked="false" aria-label="White" style="--c:#ffffff"></button></div>
+    <div class="mk-group"><button type="button" class="mk-tool" data-mk="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 010 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -3)"/></svg><span>Undo</span></button><button type="button" class="mk-tool" data-mk="del" title="Delete selected mark (Delete)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Delete</span></button></div>
+  </div>
+  <input type="file" id="mkPic" accept="image/*" hidden>
+</div>
 <div class="modal" id="modal" hidden><div class="dlg" id="dlg" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="imgInput" accept="image/*" multiple hidden>
 <input type="file" id="logoInput" accept="image/*" hidden>

@@ -334,6 +334,34 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   .tog{font-size:12px!important;padding:2px 7px 2px 5px;gap:4px}
   .meta{gap:5px}
 }
+
+/* ---- Photo markup editor ---- */
+.mk,.mk *,.thumb,.thumb *{-webkit-tap-highlight-color:transparent}
+.mk{position:fixed;inset:0;z-index:35;background:#14181e;color:#eef1f5;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+.mk[hidden]{display:none}
+.mk-top{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #2c333d}
+.mk-top h2{flex:1;margin:0;font-size:16px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-btn{min-height:44px;padding:0 16px;border-radius:9px;border:1px solid #4a5462;background:#232a34;color:#eef1f5;font:inherit;font-size:15px;cursor:pointer}
+.mk-btn.primary{background:#2f7be0;border-color:#2f7be0;color:#fff;font-weight:600}
+.mk-btn:focus-visible,.mk-tool:focus-visible,.mk-sw:focus-visible{outline:3px solid #7fb0ee;outline-offset:2px}
+.mk-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+#mkCanvas{touch-action:none;display:block;box-shadow:0 2px 14px rgba(0,0,0,.5);cursor:crosshair;user-select:none;-webkit-user-select:none}
+.mk[data-tool="select"] #mkCanvas{cursor:default}
+.mk-tools{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;padding:8px 10px 10px;border-top:1px solid #2c333d}
+.mk-group{display:flex;gap:6px;align-items:center}
+.mk-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:60px;height:56px;border-radius:10px;border:1px solid transparent;background:transparent;color:#d6dbe2;font:inherit;font-size:12px;cursor:pointer}
+.mk-tool svg{width:24px;height:24px}
+.mk-tool[aria-pressed="true"]{background:#2f7be0;color:#fff}
+.mk-tool:disabled{opacity:.35;cursor:default}
+.mk-sw{width:36px;height:36px;border-radius:50%;background:var(--c);border:3px solid #14181e;box-shadow:0 0 0 2px #59626f;cursor:pointer}
+.mk-sw[aria-checked="true"]{box-shadow:0 0 0 3px #eef1f5}
+@media (max-width:560px){ .mk-tool{width:52px;height:52px;font-size:11px} .mk-tools{gap:8px 10px} .mk-btn{padding:0 12px} }
+@media (max-height:520px) and (orientation:landscape){ .mk{flex-direction:row;flex-wrap:wrap} .mk-top{width:100%;padding:4px 10px} .mk-stage{flex:1} .mk-tools{flex-direction:column;flex-wrap:nowrap;border-top:none;border-left:1px solid #2c333d;overflow:auto;max-height:calc(100% - 54px)} .mk-group{flex-direction:column} .mk-tool{height:48px} }
+.thumb .mkbtn{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:4px;padding:3px 8px;min-height:26px;border-radius:999px;border:none;background:rgba(0,0,0,.66);color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.thumb .mkbtn:hover{background:rgba(0,0,0,.82)}
+.thumb .mkbtn svg{width:13px;height:13px}
+@media (pointer:coarse){ .thumb .mkbtn{min-height:34px;padding:4px 11px;font-size:13px} }
 </style>
 
 <header class="bar">
@@ -376,6 +404,16 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   <button class="rowtool" data-act="del">✕<span>Delete</span></button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
+<div class="mk" id="mk" hidden role="dialog" aria-modal="true" aria-labelledby="mkTitle">
+  <div class="mk-top"><button type="button" class="mk-btn" data-mk="cancel">Cancel</button><h2 id="mkTitle">Mark up</h2><button type="button" class="mk-btn" data-mk="clear">Clear all</button><button type="button" class="mk-btn primary" data-mk="done">Done</button></div>
+  <div class="mk-stage" id="mkStage"><canvas id="mkCanvas" aria-label="Photo. Drag on it to draw the selected mark."></canvas></div>
+  <div class="mk-tools" role="toolbar" aria-label="Markup tools">
+    <div class="mk-group"><button type="button" class="mk-tool" data-mkt="circle" aria-pressed="false" title="Circle"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="8.5" ry="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Circle</span></button><button type="button" class="mk-tool" data-mkt="box" aria-pressed="false" title="Box"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Box</span></button><button type="button" class="mk-tool" data-mkt="arrow" aria-pressed="false" title="Arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L18 6M18 6h-7M18 6v7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Arrow</span></button><button type="button" class="mk-tool" data-mkt="pen" aria-pressed="false" title="Draw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18c3-6 5-9 7-9s1 6 3 6 3-4 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Draw</span></button><button type="button" class="mk-tool" data-mkt="select" aria-pressed="false" title="Move"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l11 7-5 1.3L9.7 18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Move</span></button><button type="button" class="mk-tool" data-mk="pic" title="Insert picture"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="11" width="7.5" height="6" rx="1" fill="currentColor"/></svg><span>Picture</span></button></div>
+    <div class="mk-group mk-colors" role="radiogroup" aria-label="Color"><button type="button" class="mk-sw" data-mkc="#e5191c" role="radio" aria-checked="true" aria-label="Red" style="--c:#e5191c"></button><button type="button" class="mk-sw" data-mkc="#ffd60a" role="radio" aria-checked="false" aria-label="Yellow" style="--c:#ffd60a"></button><button type="button" class="mk-sw" data-mkc="#ffffff" role="radio" aria-checked="false" aria-label="White" style="--c:#ffffff"></button></div>
+    <div class="mk-group"><button type="button" class="mk-tool" data-mk="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 010 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -3)"/></svg><span>Undo</span></button><button type="button" class="mk-tool" data-mk="del" title="Delete selected mark (Delete)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Delete</span></button></div>
+  </div>
+  <input type="file" id="mkPic" accept="image/*" hidden>
+</div>
 <div class="modal" id="modal" hidden><div class="dlg" id="dlg" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="imgInput" accept="image/*" multiple hidden>
 <input type="file" id="logoInput" accept="image/*" hidden>
@@ -441,7 +479,7 @@ const KNOWN_SOE=(()=>{ const S=a=>new Set(a); const lr=["selected","machine","la
   return { roots:S(["mainroot","imageroot"]), mainroot:S(["version","FileInfo","FileProperties","isDirty","FileData"]), FileInfo:S(["name","url"]),
     FileProperties:S([...Object.keys(HEADER_LABELS),...Object.keys(HEADER_LABELS).map(k=>k+"_es"),"Advanced","Borders","Shapes","Template","SOETitle","Encrypt","password",...SECURITY_FLAGS,"Font","DefaultPPP","logo"]),
     logo:S(["imagepath","imageid"]), FileData:S(["Task"]),
-    Task:S(["VmsInfo","Analysis","cycletime","tasktype","PicsPerPage","caption","customtype","quality","caption_es","caption_es_src","code"]),
+    Task:S(["VmsInfo","Analysis","cycletime","tasktype","PicsPerPage","caption","customtype","quality","caption_es","caption_es_src","code","markup"]),
     VmsInfo:S(["imagetitle","imagepath","imageid","FontSize"]), Analysis:S(["Muda","Setup","Work","ValueAdded","NonValueAdded","TQC"]),
     Muda:S(WASTES), Setup:S(lr), Work:S(lr) }; })();
 function parseSoe(text){
@@ -483,6 +521,7 @@ function parseSoe(text){
     task.quality=isT(g(t,"quality","false")); const ct=g(t,"customtype").trim(); if(CUSTOM_TYPES[ct]) task.tasktype=ct;
     if(!TASK_TYPES.includes(task.tasktype)) task.tasktype="Work Content";
     task.caption_es=g(t,"caption_es"); task.caption_es_src=g(t,"caption_es_src"); task.code=g(t,"code");
+    { const mj=g(t,"markup"); if(mj){ try{ const m=JSON.parse(mj); if(m&&m.orig&&Array.isArray(m.items)) task.markup=m; }catch(e){} } }
     { const e={}; keep(t,"Task",e); keep(kid(t,"VmsInfo"),"VmsInfo",e); keep(a,"Analysis",e); keep(kid(a,"Muda"),"Muda",e); keep(kid(a,"Setup"),"Setup",e); keep(kid(a,"Work"),"Work",e); if(Object.keys(e).length) task.extra=e; }
     if(a){ task.wastes=Object.fromEntries(WASTES.map(w=>[w,isT(g(a,"Muda/"+w,"false"))]));
       for(const grp of ["Setup","Work"]) task[grp.toLowerCase()]=Object.fromEntries(["selected","machine","labor"].map(k=>[k,isT(g(a,grp+"/"+k,"false"))]));
@@ -511,10 +550,11 @@ function serializeSoe(d){
     o.push(X(t.extra,"Setup"),"</Setup><Work>"); for(const k of ["selected","machine","labor"]) o.push(ck(k,b(t.work[k])));
     o.push(X(t.extra,"Work"),"</Work>",ck("ValueAdded",b(t.value_added)),ck("NonValueAdded",b(t.non_value_added)),ck("TQC",b(t.tqc)),X(t.extra,"Analysis"),"</Analysis>",
       cd("cycletime",t.cycletime),ck("tasktype",CUSTOM_TYPES[t.tasktype]||t.tasktype),ck("PicsPerPage",t.pics_per_page),ck("caption",t.caption),
-      CUSTOM_TYPES[t.tasktype]?ck("customtype",t.tasktype):"",isQ(t)?ck("quality","true"):"",(t.caption_es||"").trim()?ck("caption_es",t.caption_es)+ck("caption_es_src",t.caption_es_src||""):"",(t.code||"").trim()?ck("code",t.code.trim()):"",X(t.extra,"Task"),"</Task>");
+      CUSTOM_TYPES[t.tasktype]?ck("customtype",t.tasktype):"",isQ(t)?ck("quality","true"):"",(t.caption_es||"").trim()?ck("caption_es",t.caption_es)+ck("caption_es_src",t.caption_es_src||""):"",(t.code||"").trim()?ck("code",t.code.trim()):"",t.markup&&t.markup.orig?ck("markup",JSON.stringify(t.markup)):"",X(t.extra,"Task"),"</Task>");
   }
   o.push(X(d.extra,"FileData"),"</FileData>",X(d.extra,"mainroot"),"</mainroot><imageroot><images>");
   const used=new Set(d.tasks.map(t=>t.image_id).filter(Boolean)); if(d.logo_id) used.add(d.logo_id);
+  for(const t of d.tasks) for(const id of markupImageIds(t)) used.add(id);
   for(const [id,b64] of Object.entries(d.images)){ if(!used.has(id)) continue; o.push(`<${id}>`,b64.replace(/.{76}/g,"$&\n").replace(/\n$/,""),`\n</${id}>`); }
   o.push("</images></imageroot>",X(d.extra,"roots"),"</roots>");
   return latin1(o.join(""));
@@ -534,6 +574,8 @@ function queuePreview(id){ if(prevPending.has(id)) return; prevPending.add(id);
     if(D.images[id]!==b64){ URL.revokeObjectURL(u); return; }
     prevCache.set(id,u); document.querySelectorAll(`img[data-pid="${id}"]`).forEach(im=>{ im.src=u; });
   }).catch(()=>{}).finally(()=>prevPending.delete(id)); }
+// Photos a step's markup needs besides its finished photo: the clean original and any inserted pictures.
+function markupImageIds(t){ const m=t&&t.markup; if(!m||!m.orig) return []; return [m.orig,...(m.items||[]).filter(i=>i.t==="img"&&i.id).map(i=>i.id)]; }
 function sweepPreviews(){ if(!prevCache.size) return; const used=new Set(D.tasks.map(t=>t.image_id)); used.add(D.logo_id);
   for(const [id,u] of prevCache) if(!D.images[id]||!used.has(id)){ URL.revokeObjectURL(u); prevCache.delete(id); } } // a removed photo's preview is freed; it rebuilds if undo brings it back
 function clearURLs(){ for(const u of prevCache.values()) URL.revokeObjectURL(u); prevCache.clear(); pdfImgCache.clear(); }
@@ -1061,7 +1103,7 @@ function reviewPaste(r){
       const on=new Set([...d.querySelectorAll("[data-c]:checked")].map(c=>+c.dataset.c)), seen=new Set(), next=[];
       rows.forEach(w=>{ w.si.forEach(j=>seen.add(j));
         if(on.has(w.i)){ const t=blankTask(D.default_ppp); t.caption=w.s.caption; t.tasktype=w.s.type; t.quality=w.s.type!=="Quality"&&(!!w.s.quality||w.si.some(j=>isQ(old[j]))); const o=w.si.length?old[w.si[0]]:null;
-          if(o){ if(o.extra) t.extra=o.extra; t.image_id=o.image_id; t.image_title=o.image_title; t.image_path=o.image_path; t.pics_per_page=o.pics_per_page; t.font_size=o.font_size; if(w.si.length<=1) t.cycletime=o.cycletime; } t.code=w.codeNew; next.push(t); }
+          if(o){ if(o.extra) t.extra=o.extra; if(o.markup) t.markup=JSON.parse(JSON.stringify(o.markup)); t.image_id=o.image_id; t.image_title=o.image_title; t.image_path=o.image_path; t.pics_per_page=o.pics_per_page; t.font_size=o.font_size; if(w.si.length<=1) t.cycletime=o.cycletime; } t.code=w.codeNew; next.push(t); }
         else w.si.forEach(j=>next.push(old[j])); });
       old.forEach((o,j)=>{ if(!seen.has(j)) next.push(o); });  // never silently drop an original
       D.tasks=next.length?next:old; close(); changed(true); toast(`Applied ${on.size} of ${r.steps.length} changes`); };
@@ -1125,7 +1167,7 @@ function renderVI(){
   return `${stepBar()}<div class="cards">${D.tasks.map((t,i)=>{ const has=t.image_id&&D.images[t.image_id], qt=t.tasktype==="Quality";
     return `<article class="scard ${sel.has(i)?"sel":""}" data-row="${i}" aria-label="Step ${i+1}">
     <div class="snum"><button class="selbtn" data-sel="${i}" aria-label="Select step ${i+1}" title="Select. Ctrl or Shift for several.">${shapeSVG(t.tasktype,i+1,40,isQ(t))}</button><span class="handle" draggable="true" data-drag="${i}" title="Drag to reorder" aria-hidden="true">⋮⋮</span></div>
-    <div class="thumb ${has?"has":""}" data-img="${i}" tabindex="0" role="button" aria-label="${has?"Change":"Add"} picture for step ${i+1}" title="Click, drop or paste a picture">${has?`${imgTag(t.image_id)}<button class="x" data-rmimg="${i}" aria-label="Remove picture from step ${i+1}">×</button>`:"＋ Add photo"}</div>
+    <div class="thumb ${has?"has":""}" data-img="${i}" tabindex="0" role="button" aria-label="${has?"Change":"Add"} picture for step ${i+1}" title="Click, drop or paste a picture">${has?`${imgTag(t.image_id)}<button class="x" data-rmimg="${i}" aria-label="Remove picture from step ${i+1}">×</button><button type="button" class="mkbtn" data-mkopen="${i}" aria-label="Mark up picture for step ${i+1}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>Mark up</button>`:"＋ Add photo"}</div>
     <div class="sbody"><textarea class="cap" id="cap${i}" spellcheck="true" data-f="caption" data-i="${i}" aria-label="Task for step ${i+1}" placeholder="What to do in this step">${esc(t.caption)}</textarea>
       <div class="meta">
         <span class="pw"><span class="dot" style="background:${typeDot(t.tasktype)}"></span><select class="pill" id="tt${i}" data-f="tasktype" data-i="${i}" aria-label="Step type for step ${i+1}">${opt(TASK_TYPES,t.tasktype)}</select></span>
@@ -1285,7 +1327,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 39${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 40${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -1295,7 +1337,8 @@ document.addEventListener("click",e=>{
   const uw=e.target.closest("[data-unwaste]"); if(uw){ const i=+uw.dataset.unwaste; D.tasks[i].wastes[uw.dataset.w]=false; changed(true); setTimeout(()=>{ const b=$(`[data-wastemenu="${i}"]`); b&&b.focus(); },0); return; }
   const n=e.target.closest("[data-sel]");
   if(n){ const i=+n.dataset.sel; if(e.shiftKey){ sel=new Set(); for(let k=Math.min(lastClick,i);k<=Math.max(lastClick,i);k++) sel.add(k); } else if(e.ctrlKey||e.metaKey){ sel.has(i)?sel.delete(i):sel.add(i); if(!sel.size) sel.add(i); } else sel=new Set([i]); lastClick=i; markSel(); return; }
-  const rm=e.target.closest("[data-rmimg]"); if(rm){ e.stopPropagation(); const t=D.tasks[+rm.dataset.rmimg]; t.image_id=t.image_title=t.image_path=""; changed(true); return; }
+  const rm=e.target.closest("[data-rmimg]"); if(rm){ e.stopPropagation(); const t=D.tasks[+rm.dataset.rmimg]; t.image_id=t.image_title=t.image_path=""; delete t.markup; changed(true); return; }
+  const mo=e.target.closest("[data-mkopen]"); if(mo){ e.stopPropagation(); markupOpen(+mo.dataset.mkopen); return; }
   const im=e.target.closest("[data-img]"); if(im){ pickImageFor=+im.dataset.img; $("#imgInput").value=""; $("#imgInput").click(); return; }
   const cp=e.target.closest("[data-cp]"); if(cp){ copilotDo(cp.dataset.cp); return; }
   const a=e.target.closest("[data-act]"); if(a){ act(a.dataset.act,a); return; }
@@ -1340,11 +1383,157 @@ document.addEventListener("change",e=>{ const el=e.target;
 });
 async function setImages(i,files){ files=[...files].filter(f=>f&&f.type&&f.type.startsWith("image/")); if(!files.length){ toast("That isn't a picture."); return; }
   for(let k=0;k<files.length;k++){ const idx=i+k; if(k>0) D.tasks.splice(idx,0,blankTask(D.default_ppp));
-    try{ const id=await addImage(files[k]); const t=D.tasks[idx]; t.image_id=id; t.image_title=files[k].name||"pasted.jpg"; t.image_path=files[k].name||""; }catch(err){ toast("Couldn't read "+(files[k].name||"the picture")+": "+err.message,5000); } }
+    try{ const id=await addImage(files[k]); const t=D.tasks[idx]; t.image_id=id; delete t.markup; t.image_title=files[k].name||"pasted.jpg"; t.image_path=files[k].name||""; }catch(err){ toast("Couldn't read "+(files[k].name||"the picture")+": "+err.message,5000); } }
   changed(true); toast(files.length>1?`Added ${files.length} pictures as steps ${i+1}-${i+files.length}`:`Picture added to step ${i+1}`); }
 $("#imgInput").addEventListener("change",e=>{ if(pickImageFor>=0) setImages(pickImageFor,e.target.files); });
 $("#logoInput").addEventListener("change",async e=>{ const f=e.target.files[0]; if(!f) return; D.logo_id=await addImage(f); D.logo_path=f.name; changed(true); });
 $("#soeInput").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) openFromFile(f); });
+// ===== Photo markup =====
+// The step's photo (t.image_id) is always the finished picture with the marks drawn in, so the PDF,
+// Visual Instructor and every other tool see an ordinary photo. t.markup = {orig, items} keeps it
+// editable: orig is the image id of the clean photo, items are the marks in that photo's pixels.
+//   {t:"circle"|"box", x,y,w,h, c}   {t:"arrow", x1,y1,x2,y2, c}   {t:"pen", pts:[[x,y],...], c}
+//   {t:"img", id, x,y,w,h, c}  (an inserted picture; id is an image in D.images)
+const MK_TOOLS=["circle","box","arrow","pen","select"];
+let MK=null;
+const mkLW=(W,H)=>Math.max(3,Math.round(Math.max(W,H)*0.0065));
+function mkDecode(id){ return createImageBitmap(new Blob([b64ToBytes(D.images[id])],{type:"image/jpeg"})); }
+function mkNorm(it){ return it.w<0||it.h<0 ? {...it, x:Math.min(it.x,it.x+it.w), y:Math.min(it.y,it.y+it.h), w:Math.abs(it.w), h:Math.abs(it.h)} : it; }
+function mkBox(it){ if(it.t==="arrow") return {x:Math.min(it.x1,it.x2),y:Math.min(it.y1,it.y2),w:Math.abs(it.x2-it.x1),h:Math.abs(it.y2-it.y1)};
+  if(it.t==="pen"){ const xs=it.pts.map(p=>p[0]), ys=it.pts.map(p=>p[1]); const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}; }
+  const n=mkNorm(it); return {x:n.x,y:n.y,w:n.w,h:n.h}; }
+// Draw the marks onto a 2D context whose units are photo pixels.
+function mkDraw(x,items,lw,insets){
+  for(const raw of items){ const it=mkNorm(raw); x.save(); x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
+    x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=lw*0.8;
+    if(it.t==="img"){ const b=insets.get(it.id); x.shadowBlur=lw*1.5; if(b) x.drawImage(b,it.x,it.y,it.w,it.h); else { x.fillStyle="#888"; x.fillRect(it.x,it.y,it.w,it.h); }
+      x.shadowBlur=0; x.lineWidth=lw*0.7; x.strokeRect(it.x,it.y,it.w,it.h); }
+    else if(it.t==="box") x.strokeRect(it.x,it.y,it.w,it.h);
+    else if(it.t==="circle"){ x.beginPath(); x.ellipse(it.x+it.w/2,it.y+it.h/2,Math.max(1,it.w/2),Math.max(1,it.h/2),0,0,Math.PI*2); x.stroke(); }
+    else if(it.t==="arrow"){ const a=Math.atan2(it.y2-it.y1,it.x2-it.x1), L=Math.hypot(it.x2-it.x1,it.y2-it.y1), hl=Math.min(lw*4.2,L*0.45);
+      x.beginPath(); x.moveTo(it.x1,it.y1); x.lineTo(it.x2-Math.cos(a)*hl*0.6,it.y2-Math.sin(a)*hl*0.6); x.stroke();
+      x.beginPath(); x.moveTo(it.x2,it.y2); x.lineTo(it.x2-hl*Math.cos(a-0.45),it.y2-hl*Math.sin(a-0.45)); x.lineTo(it.x2-hl*Math.cos(a+0.45),it.y2-hl*Math.sin(a+0.45)); x.closePath(); x.fill(); }
+    else if(it.t==="pen"){ const P=it.pts; x.beginPath(); x.moveTo(P[0][0],P[0][1]);
+      if(P.length===1) x.lineTo(P[0][0]+0.1,P[0][1]);
+      for(let k=1;k<P.length-1;k++){ const mx=(P[k][0]+P[k+1][0])/2, my=(P[k][1]+P[k+1][1])/2; x.quadraticCurveTo(P[k][0],P[k][1],mx,my); }
+      if(P.length>1) x.lineTo(P.at(-1)[0],P.at(-1)[1]); x.stroke(); }
+    x.restore(); } }
+async function markupOpen(i){ if(MK) return;
+  const t=D.tasks[i]; if(!t||!t.image_id||!D.images[t.image_id]) return;
+  const mu=t.markup&&t.markup.orig&&D.images[t.markup.orig]?t.markup:null;
+  const origId=mu?mu.orig:t.image_id, items=mu?JSON.parse(JSON.stringify(mu.items||[])):[];
+  let orig; try{ orig=await mkDecode(origId); }catch(e){ toast("Couldn't open that picture: "+e.message,5000); return; }
+  const insets=new Map(); for(const it of items) if(it.t==="img"&&D.images[it.id]&&!insets.has(it.id)){ try{ insets.set(it.id,await mkDecode(it.id)); }catch(e){} }
+  const el=$("#mk"); MK={i,origId,orig,W:orig.width,H:orig.height,items,start:JSON.stringify(items),undo:[],tool:ST.mk_tool||"circle",color:ST.mk_color||"#e5191c",sel:-1,drag:null,insets,ret:document.activeElement};
+  MK.lw=mkLW(MK.W,MK.H); $("#mkTitle").textContent=`Mark up step ${i+1}`;
+  el.hidden=false; document.body.style.overflow="hidden"; mkSetTool(MK.tool); mkSetColor(MK.color); mkFit(); mkUpdate();
+  setTimeout(()=>el.querySelector(`[data-mkt="${MK.tool}"]`)?.focus(),0); }
+function mkFit(){ if(!MK) return; const st=$("#mkStage"), cv=$("#mkCanvas"), r=st.getBoundingClientRect(), pad=20;
+  const sc=Math.min((r.width-pad)/MK.W,(r.height-pad)/MK.H); MK.scale=sc; const dpr=window.devicePixelRatio||1;
+  cv.style.width=Math.round(MK.W*sc)+"px"; cv.style.height=Math.round(MK.H*sc)+"px"; cv.width=Math.round(MK.W*sc*dpr); cv.height=Math.round(MK.H*sc*dpr); MK.dpr=dpr; mkRender(); }
+function mkRender(){ if(!MK) return; const cv=$("#mkCanvas"), x=cv.getContext("2d"), k=MK.scale*MK.dpr;
+  x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,cv.width,cv.height); x.setTransform(k,0,0,k,0,0);
+  x.drawImage(MK.orig,0,0,MK.W,MK.H); mkDraw(x,MK.items,MK.lw,MK.insets);
+  if(MK.sel>=0&&MK.items[MK.sel]){ const it=MK.items[MK.sel], b=mkBox(it), u=1/MK.scale; x.save(); x.lineWidth=1.5*u; x.setLineDash([6*u,4*u]); x.strokeStyle="#fff"; x.shadowColor="rgba(0,0,0,.8)"; x.shadowBlur=3*u;
+    x.strokeRect(b.x-6*u,b.y-6*u,b.w+12*u,b.h+12*u); x.setLineDash([]);
+    for(const h of mkHandles(it)){ x.beginPath(); x.arc(h.x,h.y,9*u,0,Math.PI*2); x.fillStyle="#fff"; x.fill(); x.lineWidth=2*u; x.strokeStyle="#2f7be0"; x.stroke(); } x.restore(); } }
+function mkHandles(it){ if(it.t==="pen") return []; if(it.t==="arrow") return [{k:"a",x:it.x1,y:it.y1},{k:"b",x:it.x2,y:it.y2}];
+  const n=mkNorm(it); return [{k:"nw",x:n.x,y:n.y},{k:"ne",x:n.x+n.w,y:n.y},{k:"sw",x:n.x,y:n.y+n.h},{k:"se",x:n.x+n.w,y:n.y+n.h}]; }
+function mkPt(e){ const r=$("#mkCanvas").getBoundingClientRect(); return {x:(e.clientX-r.left)/MK.scale, y:(e.clientY-r.top)/MK.scale}; }
+function mkSegDist(p,a,b){ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy; let u=L?((p.x-a[0])*dx+(p.y-a[1])*dy)/L:0; u=Math.max(0,Math.min(1,u)); return Math.hypot(p.x-a[0]-u*dx,p.y-a[1]-u*dy); }
+// Which mark is under the point. "inside" also counts the inside of boxes, circles and pictures.
+function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
+  for(let k=MK.items.length-1;k>=0;k--){ const it=mkNorm(MK.items[k]);
+    if(it.t==="arrow"){ if(mkSegDist(p,[it.x1,it.y1],[it.x2,it.y2])<=tol) return k; continue; }
+    if(it.t==="pen"){ const P=it.pts; for(let j=0;j<P.length;j++) if(mkSegDist(p,P[j],P[Math.min(j+1,P.length-1)])<=tol) return k; continue; }
+    const inBox=p.x>=it.x-tol&&p.x<=it.x+it.w+tol&&p.y>=it.y-tol&&p.y<=it.y+it.h+tol; if(!inBox) continue;
+    if(inside||it.t==="img") { if(it.t!=="img"||inside||p.x<it.x+tol||p.x>it.x+it.w-tol||p.y<it.y+tol||p.y>it.y+it.h-tol) return k; continue; }
+    if(it.t==="box"){ if(p.x<=it.x+tol||p.x>=it.x+it.w-tol||p.y<=it.y+tol||p.y>=it.y+it.h-tol) return k; continue; }
+    if(it.t==="circle"){ const rx=it.w/2, ry=it.h/2, cx=it.x+rx, cy=it.y+ry; const d=Math.hypot((p.x-cx)/Math.max(rx,1),(p.y-cy)/Math.max(ry,1)); if(Math.abs(d-1)*Math.min(rx,ry)<=tol) return k; } }
+  return -1; }
+function mkPush(){ MK.undo.push(JSON.stringify(MK.items)); if(MK.undo.length>100) MK.undo.shift(); }
+function mkUpdate(){ const el=$("#mk"); el.querySelector('[data-mk="undo"]').disabled=!MK.undo.length; el.querySelector('[data-mk="del"]').disabled=MK.sel<0; el.querySelector('[data-mk="clear"]').disabled=!MK.items.length; mkRender(); }
+function mkSetTool(tl){ MK.tool=tl; ST.mk_tool=tl; saveSettings(); $("#mk").dataset.tool=tl; $("#mk").querySelectorAll("[data-mkt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mkt===tl))); }
+function mkSetColor(c){ MK.color=c; ST.mk_color=c; saveSettings(); $("#mk").querySelectorAll("[data-mkc]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.mkc===c)));
+  if(MK.sel>=0&&MK.items[MK.sel]&&MK.items[MK.sel].c!==c){ mkPush(); MK.items[MK.sel].c=c; mkUpdate(); } }
+function mkDelete(){ if(MK.sel<0) return; mkPush(); MK.items.splice(MK.sel,1); MK.sel=-1; mkUpdate(); }
+async function mkInsert(file){ if(!file||!file.type||!file.type.startsWith("image/")){ toast("That isn't a picture."); return; }
+  try{ const bytes=await toJpeg(file,1400,0.88); const id=newId(); D.images[id]=bytesToB64(bytes); const b=await mkDecode(id); MK.insets.set(id,b);
+    let w=MK.W*0.38, h=w*b.height/b.width; if(h>MK.H*0.45){ h=MK.H*0.45; w=h*b.width/b.height; }
+    const m=Math.max(MK.W,MK.H)*0.03; mkPush(); MK.items.push({t:"img",id,x:MK.W-w-m,y:MK.H-h-m,w,h,c:MK.color}); MK.sel=MK.items.length-1; mkUpdate();
+    toast("Picture added. Drag it to move it, or drag a corner to resize it.",3500); }
+  catch(e){ toast("Couldn't add that picture: "+e.message,5000); } }
+async function mkClose(save){
+  if(!MK) return; const m=MK, t=D.tasks[m.i];
+  if(!save&&JSON.stringify(m.items)!==m.start&&!(await ask("Your marks on this photo haven't been saved.","Discard marks"))) return;
+  if(save&&t){ const now=JSON.stringify(m.items);
+    if(now!==m.start||(t.markup&&t.markup.orig!==m.origId)){
+      if(!m.items.length){ t.image_id=m.origId; delete t.markup; }
+      else { const c=document.createElement("canvas"); c.width=m.W; c.height=m.H; const x=c.getContext("2d"); x.drawImage(m.orig,0,0); mkDraw(x,m.items,m.lw,m.insets);
+        const out=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); const id=newId(); D.images[id]=bytesToB64(new Uint8Array(await out.arrayBuffer()));
+        t.image_id=id; t.markup={orig:m.origId,items:JSON.parse(now)}; }
+      changed(true); toast(m.items.length?`Marks saved on step ${m.i+1}`:`Step ${m.i+1} is back to the original photo`); } }
+  m.orig.close?.(); for(const b of m.insets.values()) b.close?.();
+  MK=null; $("#mk").hidden=true; document.body.style.overflow="";
+  const back=document.querySelector(`[data-mkopen="${m.i}"]`)||m.ret; back&&back.focus?.(); }
+(()=>{ const el=$("#mk"), cv=$("#mkCanvas");
+  el.addEventListener("click",async e=>{ if(!MK) return; const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.mkt) mkSetTool(b.dataset.mkt);
+    else if(b.dataset.mkc) mkSetColor(b.dataset.mkc);
+    else if(b.dataset.mk==="undo"){ if(MK.undo.length){ MK.items=JSON.parse(MK.undo.pop()); MK.sel=-1; mkUpdate(); } }
+    else if(b.dataset.mk==="del") mkDelete();
+    else if(b.dataset.mk==="clear"){ if(MK.items.length){ mkPush(); MK.items=[]; MK.sel=-1; mkUpdate(); toast("All marks cleared. Undo brings them back."); } }
+    else if(b.dataset.mk==="pic"){ $("#mkPic").value=""; $("#mkPic").click(); }
+    else if(b.dataset.mk==="done") mkClose(true);
+    else if(b.dataset.mk==="cancel") mkClose(false); });
+  $("#mkPic").addEventListener("change",e=>{ if(MK&&e.target.files[0]) mkInsert(e.target.files[0]); });
+  cv.addEventListener("pointerdown",e=>{ if(!MK||MK.drag||(e.pointerType==="mouse"&&e.button!==0)) return; e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    const p=mkPt(e), tol=Math.max(MK.lw*1.5,14/MK.scale), hr=22/MK.scale; let d=null;
+    if(MK.sel>=0){ const it=MK.items[MK.sel]; const h=mkHandles(it).find(h=>Math.hypot(p.x-h.x,p.y-h.y)<=hr);
+      if(h) d={kind:"handle",h:h.k}; else if(mkHit(p,true)===MK.sel||(()=>{ const b=mkBox(it); return p.x>=b.x-tol&&p.x<=b.x+b.w+tol&&p.y>=b.y-tol&&p.y<=b.y+b.h+tol; })()) d={kind:"move"}; }
+    if(!d){ const k=MK.tool==="pen"?-1:mkHit(p,MK.tool==="select"); if(k>=0){ MK.sel=k; d={kind:"move"}; } }
+    if(!d&&MK.tool==="select"){ MK.sel=-1; mkUpdate(); return; }
+    if(d){ d.start=p; d.before=JSON.stringify(MK.items); d.orig=JSON.parse(JSON.stringify(MK.items[MK.sel])); MK.drag=d; mkUpdate(); return; }
+    const c=MK.color, before=JSON.stringify(MK.items);
+    const it=MK.tool==="arrow"?{t:"arrow",x1:p.x,y1:p.y,x2:p.x,y2:p.y,c}:MK.tool==="pen"?{t:"pen",pts:[[Math.round(p.x),Math.round(p.y)]],c}:{t:MK.tool,x:p.x,y:p.y,w:0,h:0,c};
+    MK.items.push(it); MK.sel=-1; MK.drag={kind:"new",start:p,before,id:e.pointerId}; mkRender(); });
+  cv.addEventListener("pointermove",e=>{ const d=MK&&MK.drag; if(!d) return; e.preventDefault(); const p=mkPt(e), dx=p.x-d.start.x, dy=p.y-d.start.y;
+    if(d.kind==="new"){ const it=MK.items.at(-1);
+      if(it.t==="arrow"){ it.x2=p.x; it.y2=p.y; }
+      else if(it.t==="pen"){ const L=it.pts.at(-1); if(Math.hypot(p.x-L[0],p.y-L[1])>=Math.max(1.5,2/MK.scale)) it.pts.push([Math.round(p.x),Math.round(p.y)]); }
+      else { it.w=dx; it.h=dy; if(e.shiftKey){ const s=Math.max(Math.abs(dx),Math.abs(dy)); it.w=Math.sign(dx||1)*s; it.h=Math.sign(dy||1)*s; } } }
+    else { const o=d.orig, it=MK.items[MK.sel];
+      if(d.kind==="move"){ if(o.t==="arrow"){ it.x1=o.x1+dx; it.y1=o.y1+dy; it.x2=o.x2+dx; it.y2=o.y2+dy; } else if(o.t==="pen") it.pts=o.pts.map(q=>[q[0]+dx,q[1]+dy]); else { it.x=o.x+dx; it.y=o.y+dy; } }
+      else if(o.t==="arrow"){ if(d.h==="a"){ it.x1=o.x1+dx; it.y1=o.y1+dy; } else { it.x2=o.x2+dx; it.y2=o.y2+dy; } }
+      else { const n=mkNorm(o); let x0=n.x, y0=n.y, x1=n.x+n.w, y1=n.y+n.h;
+        if(d.h.includes("w")) x0+=dx; else x1+=dx; if(d.h.includes("n")) y0+=dy; else y1+=dy;
+        if(o.t==="img"){ const ar=n.w/n.h; const w=Math.max(20,Math.abs(x1-x0)), h=w/ar; if(d.h.includes("n")) y0=y1-h; else y1=y0+h; if(d.h.includes("w")) x0=x1-w; else x1=x0+w; }
+        Object.assign(it,{x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)}); } }
+    mkRender(); });
+  const up=e=>{ const d=MK&&MK.drag; if(!d) return; MK.drag=null; try{ cv.releasePointerCapture(e.pointerId); }catch(_){}
+    if(d.kind==="new"){ const it=MK.items.at(-1), b=mkBox(it), small=Math.max(6,10/MK.scale);
+      if(it.t==="pen"?(it.pts.length<2&&e.type!=="pointerup"):(Math.max(b.w,b.h)<small)){ MK.items.pop(); const k=mkHit(d.start,false); if(k>=0) MK.sel=k; mkUpdate(); return; }
+      if(it.t!=="pen"&&it.t!=="arrow") Object.assign(it,mkNorm(it));
+      MK.undo.push(d.before); MK.sel=it.t==="pen"?-1:MK.items.length-1; }
+    else if(JSON.stringify(MK.items)!==d.before) MK.undo.push(d.before);
+    mkUpdate(); };
+  cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",up);
+  // Tell the browser the drawing area uses its own touches. Without this, a quick finger stroke
+  // counts as a scroll "fling" and the next tap (often Done) is swallowed to stop the fling.
+  for(const ty of ["touchstart","touchmove","touchend"]) cv.addEventListener(ty,e=>{ if(e.cancelable) e.preventDefault(); },{passive:false});
+  window.addEventListener("resize",()=>MK&&mkFit());
+  document.addEventListener("keydown",e=>{ if(!MK) return;
+    if(!$("#modal").hidden) return;                                   // the discard question is open
+    const k=e.key.toLowerCase();
+    if(e.key==="Escape"){ e.preventDefault(); e.stopImmediatePropagation(); if(MK.sel>=0){ MK.sel=-1; mkUpdate(); } else mkClose(false); }
+    else if((e.key==="Delete"||e.key==="Backspace")&&MK.sel>=0){ e.preventDefault(); mkDelete(); }
+    else if((e.ctrlKey||e.metaKey)&&k==="z"){ e.preventDefault(); $('#mk [data-mk="undo"]').click(); }
+    else if((e.ctrlKey||e.metaKey)&&k==="s"){ e.preventDefault(); e.stopImmediatePropagation(); mkClose(true); }
+    else if(e.key==="Tab"){ const f=[...el.querySelectorAll("button:not(:disabled)")]; const i=f.indexOf(document.activeElement);
+      if(e.shiftKey&&i<=0){ e.preventDefault(); f.at(-1).focus(); } else if(!e.shiftKey&&i===f.length-1){ e.preventDefault(); f[0].focus(); } }
+  },true);
+  document.addEventListener("paste",e=>{ if(!MK) return; const item=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith("image/")); e.preventDefault(); e.stopImmediatePropagation(); if(item) mkInsert(item.getAsFile()); },true);
+})();
 let dragFrom=-1;
 document.addEventListener("dragstart",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; dragFrom=+h.dataset.drag; e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain","step "+(dragFrom+1)); }catch(_){}
   const card=h.closest(".scard"); if(card&&e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(card,24,24); });
