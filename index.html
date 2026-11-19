@@ -1338,7 +1338,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 44${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 45${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -1711,8 +1711,12 @@ function ppeImageSVG(ids){
   items.forEach((it,i)=>{ const c=i%cols, r=Math.floor(i/cols); const x=PAD+c*(TW+GAP), y=PAD+r*(TH+GAP);
     const lines=ppeLabelLines(it.label), fs=lines.length>1?15:17;
     const labels=lines.map((ln,li)=>`<text x="${TW/2}" y="${TH-HB+ (lines.length>1?16:24) + li*16}" fill="#fff" font-family="Arial,sans-serif" font-size="${fs}" font-weight="700" text-anchor="middle">${esc(ln)}</text>`).join("");
-    const isz=120, ix=(TW-isz)/2, iy=(TH-HB-isz)/2+4;
-    body+=`<g transform="translate(${x},${y})"><rect width="${TW}" height="${TH}" rx="10" fill="#f3f5f8" stroke="#c9d2dc" stroke-width="1.5"/><g transform="translate(${ix},${iy}) scale(${isz/100})">${it.svg}</g><rect y="${TH-HB}" width="${TW}" height="${HB}" fill="${PPE_LBL}"/>${labels}</g>`;
+    const isz=120, ix=(TW-isz)/2, iy=(TH-HB-isz)/2+4, R=10, sy=TH-HB;
+    // Light top (rounded top corners) and navy name strip (rounded bottom corners) meet edge to edge,
+    // so nothing pokes past the tile's rounded corners.
+    const top=`M0 ${sy}V${R}A${R} ${R} 0 0 1 ${R} 0H${TW-R}A${R} ${R} 0 0 1 ${TW} ${R}V${sy}Z`;
+    const strip=`M0 ${sy}H${TW}V${TH-R}A${R} ${R} 0 0 1 ${TW-R} ${TH}H${R}A${R} ${R} 0 0 1 0 ${TH-R}Z`;
+    body+=`<g transform="translate(${x},${y})"><path d="${top}" fill="#f3f5f8"/><g transform="translate(${ix},${iy}) scale(${isz/100})">${it.svg}</g><path d="${strip}" fill="${PPE_LBL}"/>${labels}</g>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#0d2237"/>${body}</svg>`;
 }
