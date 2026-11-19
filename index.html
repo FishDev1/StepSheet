@@ -558,7 +558,7 @@ function serializeSoe(d){
     o.push(X(t.extra,"Setup"),"</Setup><Work>"); for(const k of ["selected","machine","labor"]) o.push(ck(k,b(t.work[k])));
     o.push(X(t.extra,"Work"),"</Work>",ck("ValueAdded",b(t.value_added)),ck("NonValueAdded",b(t.non_value_added)),ck("TQC",b(t.tqc)),X(t.extra,"Analysis"),"</Analysis>",
       cd("cycletime",t.cycletime),ck("tasktype",CUSTOM_TYPES[t.tasktype]||t.tasktype),ck("PicsPerPage",t.pics_per_page),ck("caption",t.caption),
-      CUSTOM_TYPES[t.tasktype]?ck("customtype",t.tasktype):"",isQ(t)?ck("quality","true"):"",(t.caption_es||"").trim()?ck("caption_es",t.caption_es)+ck("caption_es_src",t.caption_es_src||""):"",(t.code||"").trim()?ck("code",t.code.trim()):"",t.markup&&t.markup.orig?ck("markup",JSON.stringify(t.markup)):"",X(t.extra,"Task"),"</Task>");
+      CUSTOM_TYPES[t.tasktype]?ck("customtype",t.tasktype):"",isQ(t)?ck("quality","true"):"",(t.caption_es||"").trim()?ck("caption_es",t.caption_es)+ck("caption_es_src",t.caption_es_src||""):"",(t.code||"").trim()?ck("code",t.code.trim()):"",t.markup&&t.markup.orig&&d.images[t.markup.orig]?ck("markup",JSON.stringify(t.markup)):"",X(t.extra,"Task"),"</Task>");
   }
   o.push(X(d.extra,"FileData"),"</FileData>",X(d.extra,"mainroot"),"</mainroot><imageroot><images>");
   const used=new Set(d.tasks.map(t=>t.image_id).filter(Boolean)); if(d.logo_id) used.add(d.logo_id);
@@ -919,6 +919,7 @@ async function writeDraft(fresh){ clearTimeout(draftTimer); draftTimer=null;
 async function restoreDraft(){
   try{ const dr=await idbGet("draft"); if(!dr||!dr.meta||!Array.isArray(dr.meta.tasks)) return false;
     const d={...blankDoc(),...dr.meta,images:{}}; const ids=new Set(d.tasks.map(t=>t.image_id).filter(Boolean)); if(d.logo_id) ids.add(d.logo_id);
+    for(const t of d.tasks) for(const id of markupImageIds(t)) ids.add(id);   // clean originals + inserted pictures behind marked-up photos
     for(const id of ids){ const b=await idbGet("img:"+id); if(b){ d.images[id]=b; persisted.add(id); } }
     clearURLs(); D=d; fileHandle=dr.handle||null; dirty=!!dr.dirty; lastDraft=dr.savedAt||0; sel=new Set([0]); render();
     const t=new Date(dr.savedAt||Date.now()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
@@ -1335,7 +1336,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 42${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 43${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */

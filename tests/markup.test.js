@@ -140,6 +140,33 @@ run("photo markup", async b => {
   ok(await p.evaluate(() => !D.tasks[1].markup && !D.tasks[1].image_id), "Removing a photo removes its marks");
   ok(!errs.length, "No console errors " + JSON.stringify(errs));
 
+  // Real-world reopen paths: close & reopen the app (restored draft), and Save -> Open the .soe
+  { const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }); const q = await ctx.newPage(); const qe = []; q.on("pageerror", e => qe.push(String(e)));
+    await q.goto(require("./lib").url("StepSheet.html")); await q.waitForFunction(() => typeof loadDoc === "function");
+    await q.evaluate(s => loadDoc(parseSoe(s)), fs.readFileSync(FIXTURE).toString("latin1")); await q.waitForTimeout(500);
+    await q.click('[data-mkopen="0"]'); await q.waitForSelector("#mk:not([hidden])");
+    const cb = await q.locator("#mkCanvas").boundingBox();
+    await q.click('[data-mkt="circle"]'); await q.mouse.move(cb.x + cb.width * .2, cb.y + cb.height * .2); await q.mouse.down(); await q.mouse.move(cb.x + cb.width * .5, cb.y + cb.height * .5, { steps: 6 }); await q.mouse.up();
+    await q.click('#mk [data-mk="done"]'); await q.waitForSelector("#mk", { state: "hidden" });
+    await q.waitForTimeout(1500);                                  // auto-recovery draft is written
+    const saved = await q.evaluate(() => { const u = serializeSoe(D); let s = ""; for (const c of u) s += String.fromCharCode(c); return btoa(s); });
+    await q.reload(); await q.waitForFunction(() => typeof D !== "undefined" && D.tasks.length === 4, null, { timeout: 10000 }); await q.waitForTimeout(500);
+    await q.click('[data-mkopen="0"]'); await q.waitForSelector("#mk:not([hidden])");
+    ok(await q.evaluate(() => MK.items.length === 1 && MK.items[0].t === "circle" && MK.origId === D.tasks[0].markup.orig && MK.origId !== D.tasks[0].image_id), "After closing and reopening the app, the marks are still editable");
+    await q.click('#mk [data-mk="cancel"]');
+    ok(!qe.length, "Reopen app: no page errors " + JSON.stringify(qe));
+    await ctx.close();
+    // Save -> open the file in a fresh browser (no saved draft)
+    const f = path.join(__dirname, "fixtures", "_marked.soe"); fs.writeFileSync(f, Buffer.from(saved, "base64"));
+    const c2 = await b.newContext({ viewport: { width: 1280, height: 900 } }); const r = await c2.newPage();
+    await r.goto(require("./lib").url("StepSheet.html")); await r.waitForFunction(() => typeof loadDoc === "function");
+    await r.locator("#soeInput").setInputFiles(f); await r.waitForFunction(() => D.tasks.length === 4 && D.tasks[0].markup, null, { timeout: 10000 }); fs.unlinkSync(f);
+    await r.waitForTimeout(400); await r.click('[data-mkopen="0"]'); await r.waitForSelector("#mk:not([hidden])");
+    ok(await r.evaluate(() => MK.items.length === 1 && MK.origId === D.tasks[0].markup.orig), "After Save and opening the .soe again, the marks are still editable");
+    await r.evaluate(() => { MK.items[0].c = "#1f6fe0"; }); await r.click('#mk [data-mk="done"]'); await r.waitForSelector("#mk", { state: "hidden" });
+    ok(await r.evaluate(() => D.tasks[0].markup.items[0].c === "#1f6fe0"), "...and changes to them save");
+    await c2.close(); }
+
   // Tablet: touch drawing with real touch pointer events
   const tab = await openApp(b, { ...devices["iPad (gen 7)"] });
   await tab.p.evaluate(s => { loadDoc(parseSoe(s)); render(); }, fs.readFileSync(FIXTURE).toString("latin1"));
