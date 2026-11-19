@@ -80,7 +80,7 @@ run("photo markup", async b => {
   const lb = await p.evaluate(() => { const b = mkBox(MK.items.at(-1)), r = document.querySelector("#mkCanvas").getBoundingClientRect(); return [r.left + (b.x + b.w / 2) * MK.scale, r.top + (b.y + b.h / 2) * MK.scale]; });
   await p.click('[data-mkt="select"]'); await p.mouse.click(...lb);
   await p.waitForSelector("#mkTxt"); await p.fill("#mkTxt", "TORQUE TO 40 IN-LBS"); await p.click('#dlg [data-r="1"]');
-  ok(await p.evaluate(() => MK.items.at(-1).s === "TORQUE TO 40 IN-LBS"), "Tapping a selected label edits its text");
+  ok(await p.waitForFunction(() => MK.items.at(-1).s === "TORQUE TO 40 IN-LBS", null, { timeout: 2000 }).then(() => true, () => false), "Tapping a selected label edits its text");
   const sz0 = await p.evaluate(() => MK.items.at(-1).size);
   const lse = await p.evaluate(() => { const b = mkBox(MK.items.at(-1)), r = document.querySelector("#mkCanvas").getBoundingClientRect(); return [r.left + (b.x + b.w) * MK.scale, r.top + (b.y + b.h) * MK.scale]; });
   await drag(lse, [lse[0] + 60, lse[1] + 10]);

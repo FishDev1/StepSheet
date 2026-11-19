@@ -1484,10 +1484,11 @@ function mkAskText(init=""){ return new Promise(res=>{ let done=false;
   modal(`<h2>${init?"Edit label":"Add a label"}</h2><label class="mk-tlab">Text<textarea id="mkTxt" rows="2" maxlength="200" placeholder="e.g. TORQUE TO 35 IN-LBS">${esc(init)}</textarea></label>
     <p class="hint">Enter adds the label. Shift+Enter starts a new line.</p>
     <div class="acts"><button class="lbtn" data-r="0">Cancel</button>${init?'<button class="lbtn danger" data-r="del">Delete label</button>':""}<button class="lbtn primary" data-r="1">${init?"Save":"Add"}</button></div>`,(d,close)=>{
-    const ta=d.querySelector("#mkTxt"), fin=v=>{ if(done) return; done=true; close(); res(v); };
-    d.addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; fin(b.dataset.r==="1"?ta.value.replace(/\s+$/,""):b.dataset.r==="del"?"\u0000del":null); });
+    const ta=d.querySelector("#mkTxt"), fin=v=>{ if(done) return; done=true; d.onclick=null; close(); res(v); };
+    // onclick (not addEventListener): the dialog box is shared, so each opening replaces the handler instead of stacking them
+    d.onclick=e=>{ const b=e.target.closest("[data-r]"); if(!b) return; fin(b.dataset.r==="1"?ta.value.replace(/\s+$/,""):b.dataset.r==="del"?"\u0000del":null); };
     ta.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); fin(ta.value.replace(/\s+$/,"")); } else if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); fin(null); } });
-    setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },30); }); }); }
+    ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); }); }); }
 async function mkEditText(k){ const it=MK.items[k]; if(!it||it.t!=="text") return; const v=await mkAskText(it.s); if(!MK) return;
   if(v==="\u0000del"){ MK.sel=k; mkDelete(); return; }
   if(v===null||v===it.s) return; mkPush(); if(!v.trim()){ MK.items.splice(k,1); MK.sel=-1; } else it.s=v; mkUpdate(); }

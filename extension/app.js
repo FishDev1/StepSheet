@@ -910,7 +910,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 46${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 47${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -1062,10 +1062,11 @@ function mkAskText(init=""){ return new Promise(res=>{ let done=false;
   modal(`<h2>${init?"Edit label":"Add a label"}</h2><label class="mk-tlab">Text<textarea id="mkTxt" rows="2" maxlength="200" placeholder="e.g. TORQUE TO 35 IN-LBS">${esc(init)}</textarea></label>
     <p class="hint">Enter adds the label. Shift+Enter starts a new line.</p>
     <div class="acts"><button class="lbtn" data-r="0">Cancel</button>${init?'<button class="lbtn danger" data-r="del">Delete label</button>':""}<button class="lbtn primary" data-r="1">${init?"Save":"Add"}</button></div>`,(d,close)=>{
-    const ta=d.querySelector("#mkTxt"), fin=v=>{ if(done) return; done=true; close(); res(v); };
-    d.addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; fin(b.dataset.r==="1"?ta.value.replace(/\s+$/,""):b.dataset.r==="del"?"\u0000del":null); });
+    const ta=d.querySelector("#mkTxt"), fin=v=>{ if(done) return; done=true; d.onclick=null; close(); res(v); };
+    // onclick (not addEventListener): the dialog box is shared, so each opening replaces the handler instead of stacking them
+    d.onclick=e=>{ const b=e.target.closest("[data-r]"); if(!b) return; fin(b.dataset.r==="1"?ta.value.replace(/\s+$/,""):b.dataset.r==="del"?"\u0000del":null); };
     ta.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); fin(ta.value.replace(/\s+$/,"")); } else if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); fin(null); } });
-    setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); },30); }); }); }
+    ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); }); }); }
 async function mkEditText(k){ const it=MK.items[k]; if(!it||it.t!=="text") return; const v=await mkAskText(it.s); if(!MK) return;
   if(v==="\u0000del"){ MK.sel=k; mkDelete(); return; }
   if(v===null||v===it.s) return; mkPush(); if(!v.trim()){ MK.items.splice(k,1); MK.sel=-1; } else it.s=v; mkUpdate(); }
