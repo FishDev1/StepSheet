@@ -68,6 +68,10 @@ run("editing (desktop)", async b => {
   ok((await p.locator("#tm0").inputValue()) === "40", "...and a change on the Analysis tab shows on the card");
   // Settings switch hides the Code box (except on steps that already have a code)
   await p.evaluate(() => { D.tasks[1].code = "ABYC H-24"; D.tasks[0].code = ""; render(); });
+  await p.click('#tabs [data-tab="opt"]');
+  ok(!(await p.locator("#o_code").isChecked()), "Code box switch is off by default");
+  await p.locator("#o_code").check(); await p.click('#tabs [data-tab="vi"]'); await p.waitForSelector("#tm0");
+  ok(await p.locator("#rc0").count() === 1, "Turning the switch on shows the Code box on every step");
   await p.click('#tabs [data-tab="opt"]'); await p.locator("#o_code").uncheck();
   await p.click('#tabs [data-tab="vi"]'); await p.waitForSelector("#tm0");
   ok(await p.locator("#rc0").count() === 0 && await p.locator("#tm0").count() === 1, "With the switch off, a step with no code has no Code box (Time box stays)");

@@ -11,13 +11,15 @@ run("phones", async b => {
       const card = document.querySelector(".scard").getBoundingClientRect(), y0 = document.querySelector(".mainwrap").getBoundingClientRect().top, bar = document.querySelector(".mobbar");
       return { overflow: document.documentElement.scrollWidth > innerWidth, stepbar: vis(document.querySelector("#stepbar")), mobbar: vis(bar),
         fits: card.height <= bar.getBoundingClientRect().top - y0, settingsLabel: [...document.querySelectorAll("#tabs button")].filter(vis).map(e => e.innerText.trim()).join("|"),
-        codeFont: parseFloat(getComputedStyle(document.querySelector("#rc0")).fontSize) }; });
+        codeFont: parseFloat(getComputedStyle(document.querySelector("#tm0")).fontSize) }; });
     ok(!m.overflow, name + ": no sideways scrolling");
     ok(!m.stepbar && m.mobbar, name + ": bottom action bar replaces the desktop step bar");
     ok(m.fits, name + ": a whole step card fits on screen");
     ok(/Settings/.test(m.settingsLabel) && !/Document settings/.test(m.settingsLabel), name + ": tab reads \"Settings\"");
     ok(m.codeFont >= 16, name + ": text boxes are 16 px so iPhone doesn't zoom in");
     // Time box on the step card, before the Code box, feeds the same cycle time Analysis uses
+    ok(await p.locator("#rc1").count() === 0, name + ": Code box is hidden by default");
+    await p.evaluate(() => { ST.show_code_box = true; render(); });
     const order = await p.evaluate(() => { const a = document.querySelector("#tm1"), c = document.querySelector("#rc1"); return !!(a && c && (a.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING)); });
     ok(order, name + ": Time box sits before the Code box");
     await p.locator("#tm1").fill("45"); await p.locator("#tm2").fill("20");
