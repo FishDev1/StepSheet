@@ -26,7 +26,7 @@ const WIDTHS={"Helvetica":[278,278,355,556,556,889,667,191,333,333,389,584,278,3
 
 /* ===================================================================== settings */
 const SETTINGS_KEY="vi-settings-v1";
-let ST={es_keep:null,colors:{...DEFAULT_COLORS},image_quality:"Medium",add_date:true,remember_header:false,saved_header:{},ppe_first_step:true};
+let ST={es_keep:null,colors:{...DEFAULT_COLORS},image_quality:"Medium",add_date:true,remember_header:false,saved_header:{},ppe_first_step:true,show_code:true};
 try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||"null"); if(s){ ST={...ST,...s}; ST.colors={...DEFAULT_COLORS,...(s.colors||{})}; } }catch(e){}
 function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(ST)); }catch(e){} }
 
@@ -754,7 +754,8 @@ function renderVI(){
         <label class="tog q" title="${qt?"This step is already a Quality step.":"Also integral to quality. It prints inside a Quality octagon."}"><input type="checkbox" data-q="${i}" ${t.quality||qt?"checked":""} ${qt?"disabled":""}> Integral to quality</label>
         <select class="pill" id="pp${i}" data-f="pics_per_page" data-i="${i}" aria-label="Page layout for step ${i+1}" title="Page layout in the PDF">${opt(PAGE_TYPES,t.pics_per_page,pageLabel)}</select>
         <label class="pill-lbl"><span class="tl">Text</span> <select class="pill" id="fs${i}" data-f="font_size" data-i="${i}" aria-label="Text size for step ${i+1}">${[8,9,10,11,12,13,14].map(x=>`<option value="${x}" ${String(x)===String(t.font_size)?"selected":""}>${x} pt</option>`).join("")}</select></label>
-        <label class="pill-lbl code-lbl"><span class="tl">Code</span> <input class="pill code" id="rc${i}" data-f="code" data-i="${i}" value="${esc(t.code||"")}" maxlength="40" spellcheck="false" autocomplete="off" placeholder="USCG / ABYC" aria-label="USCG or ABYC code for step ${i+1}" title="Coast Guard or ABYC reference. It prints in a thin strip along the bottom of the step in the PDF."></label>
+        <label class="pill-lbl time-lbl"><span class="tl">Time</span> <input class="pill code time" id="tm${i}" data-f="cycletime" data-i="${i}" value="${esc(t.cycletime||"")}" inputmode="decimal" maxlength="12" autocomplete="off" placeholder="Time" aria-label="Time for step ${i+1}" title="Time this step takes. It's the same number as Cycle time on the Analysis tab, and it prints in the step's corner box."></label>
+        ${ST.show_code!==false||(t.code||"").trim()?`<label class="pill-lbl code-lbl"><span class="tl">Code</span> <input class="pill code" id="rc${i}" data-f="code" data-i="${i}" value="${esc(t.code||"")}" maxlength="40" spellcheck="false" autocomplete="off" placeholder="USCG / ABYC" aria-label="USCG or ABYC code for step ${i+1}" title="Coast Guard or ABYC reference. It prints in a thin strip along the bottom of the step in the PDF."></label>`:""}
         ${t.image_title?`<span class="imgname" title="${esc(t.image_path||t.image_title)}">${esc(t.image_title)}</span>`:""}
       </div></div>
   </article>`; }).join("")}<button class="addcard rowtool" data-act="add">＋ Add step</button></div>`; }
@@ -899,6 +900,8 @@ function renderOpt(){ const d=D;
     <label class="chk"><input type="checkbox" id="o_t" data-o="soe_title" ${d.soe_title?"checked":""}> Title on the Analysis PDF</label>
     <label class="chk"><input type="checkbox" id="o_d" data-st="add_date" ${ST.add_date?"checked":""}> Add current date to PDF footer</label>
     <label class="chk"><input type="checkbox" id="o_ppe" data-st="ppe_first_step" ${ST.ppe_first_step?"checked":""}> First step is Required PPE (new files)</label>
+    <label class="chk"><input type="checkbox" id="o_code" data-st="show_code" ${ST.show_code!==false?"checked":""}> Show the USCG / ABYC Code box on steps</label>
+    <p class="hint">When it's off, the Code box still shows on steps that already have a code, and codes still print on the PDF.</p>
     <p class="hint">PDFs use Helvetica, like the original's default.</p></div>
   <div class="card"><h3>Security</h3>
     <p class="hint">These settings are kept in the .soe file so the old program still applies them. This web version does not password-protect its PDFs.</p>
@@ -907,7 +910,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 45${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 46${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */

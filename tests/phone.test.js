@@ -17,6 +17,13 @@ run("phones", async b => {
     ok(m.fits, name + ": a whole step card fits on screen");
     ok(/Settings/.test(m.settingsLabel) && !/Document settings/.test(m.settingsLabel), name + ": tab reads \"Settings\"");
     ok(m.codeFont >= 16, name + ": text boxes are 16 px so iPhone doesn't zoom in");
+    // Time box on the step card, before the Code box, feeds the same cycle time Analysis uses
+    const order = await p.evaluate(() => { const a = document.querySelector("#tm1"), c = document.querySelector("#rc1"); return !!(a && c && (a.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING)); });
+    ok(order, name + ": Time box sits before the Code box");
+    await p.locator("#tm1").fill("45"); await p.locator("#tm2").fill("20");
+    ok(await p.evaluate(() => D.tasks[1].cycletime === "45" && D.tasks[2].cycletime === "20"), name + ": typing in Time sets the step's cycle time");
+    ok(/Total time 65/.test(await p.locator("#status").innerText()), name + ": status line shows the total time");
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), name + ": still no sideways scrolling with the Time box");
     await p.click('#tabs [data-tab="opt"]');
     ok(await p.locator(".copilot-card [data-cp]").count() === 4, name + ": Copilot card with 4 actions in Settings");
     ok(!errs.length, name + ": no console errors " + JSON.stringify(errs));

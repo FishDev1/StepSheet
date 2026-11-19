@@ -236,6 +236,7 @@ h3{margin:2px 0 10px;font-size:14px}
 select.pill{border:1px solid var(--edge);border-radius:999px;background:var(--panel2);padding:3px 8px 3px 10px;font-size:12.5px;cursor:pointer;min-height:28px}
 .pw select.pill{padding-left:26px;font-weight:600}
 .pill-lbl{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+input.pill.code.time{width:5.5em}
 input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(--panel2);color:var(--ink);padding:3px 10px;font:inherit;font-size:12.5px;min-height:28px;width:10.5em}
 .tog{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--edge);border-radius:999px;padding:3px 10px 3px 8px;font-size:12.5px;color:var(--muted);background:var(--panel2);cursor:pointer;white-space:nowrap;min-height:28px}
 .tog input{margin:0;width:14px;height:14px;accent-color:var(--ink)}
@@ -310,9 +311,11 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   .meta{gap:6px}
   select.pill{font-size:16px!important;min-height:34px;padding-top:2px;padding-bottom:2px}
   input.pill.code{font-size:16px!important;min-height:34px;width:9em}
+  input.pill.code.time{width:5em}
   .pw select.pill{padding-left:24px}
   .tog{font-size:13.5px!important;min-height:34px;padding:2px 10px 2px 8px}
   .pill-lbl .tl,.imgname{display:none}
+  .time-lbl .tl,.code-lbl .tl{display:inline;font-size:14px}   /* a filled-in number needs its label */
   .addcard{padding:10px}
   select.pill{padding:2px 2px 2px 8px} .pw select.pill{padding-left:22px} .pw .dot{left:9px}
 }
@@ -445,7 +448,7 @@ const WIDTHS=__WIDTHS__;
 
 /* ===================================================================== settings */
 const SETTINGS_KEY="vi-settings-v1";
-let ST={es_keep:null,colors:{...DEFAULT_COLORS},image_quality:"Medium",add_date:true,remember_header:false,saved_header:{},ppe_first_step:true};
+let ST={es_keep:null,colors:{...DEFAULT_COLORS},image_quality:"Medium",add_date:true,remember_header:false,saved_header:{},ppe_first_step:true,show_code:true};
 try{ const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||"null"); if(s){ ST={...ST,...s}; ST.colors={...DEFAULT_COLORS,...(s.colors||{})}; } }catch(e){}
 function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(ST)); }catch(e){} }
 
@@ -1173,7 +1176,8 @@ function renderVI(){
         <label class="tog q" title="${qt?"This step is already a Quality step.":"Also integral to quality. It prints inside a Quality octagon."}"><input type="checkbox" data-q="${i}" ${t.quality||qt?"checked":""} ${qt?"disabled":""}> Integral to quality</label>
         <select class="pill" id="pp${i}" data-f="pics_per_page" data-i="${i}" aria-label="Page layout for step ${i+1}" title="Page layout in the PDF">${opt(PAGE_TYPES,t.pics_per_page,pageLabel)}</select>
         <label class="pill-lbl"><span class="tl">Text</span> <select class="pill" id="fs${i}" data-f="font_size" data-i="${i}" aria-label="Text size for step ${i+1}">${[8,9,10,11,12,13,14].map(x=>`<option value="${x}" ${String(x)===String(t.font_size)?"selected":""}>${x} pt</option>`).join("")}</select></label>
-        <label class="pill-lbl code-lbl"><span class="tl">Code</span> <input class="pill code" id="rc${i}" data-f="code" data-i="${i}" value="${esc(t.code||"")}" maxlength="40" spellcheck="false" autocomplete="off" placeholder="USCG / ABYC" aria-label="USCG or ABYC code for step ${i+1}" title="Coast Guard or ABYC reference. It prints in a thin strip along the bottom of the step in the PDF."></label>
+        <label class="pill-lbl time-lbl"><span class="tl">Time</span> <input class="pill code time" id="tm${i}" data-f="cycletime" data-i="${i}" value="${esc(t.cycletime||"")}" inputmode="decimal" maxlength="12" autocomplete="off" placeholder="Time" aria-label="Time for step ${i+1}" title="Time this step takes. It's the same number as Cycle time on the Analysis tab, and it prints in the step's corner box."></label>
+        ${ST.show_code!==false||(t.code||"").trim()?`<label class="pill-lbl code-lbl"><span class="tl">Code</span> <input class="pill code" id="rc${i}" data-f="code" data-i="${i}" value="${esc(t.code||"")}" maxlength="40" spellcheck="false" autocomplete="off" placeholder="USCG / ABYC" aria-label="USCG or ABYC code for step ${i+1}" title="Coast Guard or ABYC reference. It prints in a thin strip along the bottom of the step in the PDF."></label>`:""}
         ${t.image_title?`<span class="imgname" title="${esc(t.image_path||t.image_title)}">${esc(t.image_title)}</span>`:""}
       </div></div>
   </article>`; }).join("")}<button class="addcard rowtool" data-act="add">＋ Add step</button></div>`; }
@@ -1318,6 +1322,8 @@ function renderOpt(){ const d=D;
     <label class="chk"><input type="checkbox" id="o_t" data-o="soe_title" ${d.soe_title?"checked":""}> Title on the Analysis PDF</label>
     <label class="chk"><input type="checkbox" id="o_d" data-st="add_date" ${ST.add_date?"checked":""}> Add current date to PDF footer</label>
     <label class="chk"><input type="checkbox" id="o_ppe" data-st="ppe_first_step" ${ST.ppe_first_step?"checked":""}> First step is Required PPE (new files)</label>
+    <label class="chk"><input type="checkbox" id="o_code" data-st="show_code" ${ST.show_code!==false?"checked":""}> Show the USCG / ABYC Code box on steps</label>
+    <p class="hint">When it's off, the Code box still shows on steps that already have a code, and codes still print on the PDF.</p>
     <p class="hint">PDFs use Helvetica, like the original's default.</p></div>
   <div class="card"><h3>Security</h3>
     <p class="hint">These settings are kept in the .soe file so the old program still applies them. This web version does not password-protect its PDFs.</p>

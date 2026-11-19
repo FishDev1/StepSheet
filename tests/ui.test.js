@@ -59,4 +59,19 @@ run("editing (desktop)", async b => {
   // 200% zoom ~ 590px wide fine pointer, and 320px
   for(const w of [590,320]){ await p.setViewportSize({width:w,height:800}); await p.waitForTimeout(100); ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No sideways scroll at '+w+'px'); }
   ok(!errs.length, "No console errors " + JSON.stringify(errs));
+  // Time box on the card and Cycle time on the Analysis tab are the same value
+  await p.click('#tabs [data-tab="vi"]'); await p.waitForSelector("#tm0");
+  await p.locator("#tm0").fill("33");
+  await p.click('#tabs [data-tab="an"]'); await p.waitForSelector("#ct0");
+  ok((await p.locator("#ct0").inputValue()) === "33", "Time typed on the step card shows as Cycle time on the Analysis tab");
+  await p.locator("#ct0").fill("40"); await p.click('#tabs [data-tab="vi"]'); await p.waitForSelector("#tm0");
+  ok((await p.locator("#tm0").inputValue()) === "40", "...and a change on the Analysis tab shows on the card");
+  // Settings switch hides the Code box (except on steps that already have a code)
+  await p.evaluate(() => { D.tasks[1].code = "ABYC H-24"; D.tasks[0].code = ""; render(); });
+  await p.click('#tabs [data-tab="opt"]'); await p.locator("#o_code").uncheck();
+  await p.click('#tabs [data-tab="vi"]'); await p.waitForSelector("#tm0");
+  ok(await p.locator("#rc0").count() === 0 && await p.locator("#tm0").count() === 1, "With the switch off, a step with no code has no Code box (Time box stays)");
+  ok(await p.locator("#rc1").count() === 1, "...but a step that already has a code keeps its Code box");
+  await p.click('#tabs [data-tab="opt"]'); await p.locator("#o_code").check(); await p.click('#tabs [data-tab="vi"]');
+  ok(await p.locator("#rc0").count() === 1, "Turning the switch back on shows the Code box again");
 });
