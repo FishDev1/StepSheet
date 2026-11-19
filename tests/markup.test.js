@@ -47,6 +47,23 @@ run("photo markup", async b => {
   ok(await p.evaluate(() => MK.items.length === 4 && MK.items[1].c === "#1f6fe0"), "Undo brings it back");
   await p.keyboard.press("Control+z");
   ok(await p.evaluate(() => MK.items[1].c === "#e5191c"), "Ctrl+Z undoes the color change");
+  // line thickness: Thinner / Thicker on the selected mark, and for new marks
+  await p.click('[data-mkt="select"]'); await drag(at(.10, .25), at(.10, .25 + 0.0001), 1);
+  await p.evaluate(() => { MK.sel = 0; mkUpdate(); });
+  ok(await p.locator("#mk .mk-thick").isVisible(), "Thinner/Thicker show while a shape is selected");
+  const th0 = await p.evaluate(() => MK.items[0].th);
+  await p.click('#mk [data-mk="thicker"]'); await p.click('#mk [data-mk="thicker"]');
+  ok(await p.evaluate(t => MK.items[0].th === t + 2, th0), "Thicker makes the selected mark thicker");
+  await p.click('#mk [data-mk="thinner"]');
+  ok(await p.evaluate(t => MK.items[0].th === t + 1, th0), "Thinner makes it thinner again");
+  for (let k = 0; k < 6; k++) if (!(await p.locator('#mk [data-mk="thicker"]').isDisabled())) await p.click('#mk [data-mk="thicker"]');
+  ok(await p.locator('#mk [data-mk="thicker"]').isDisabled(), "Thicker stops at the thickest setting");
+  await p.click('#mk [data-mk="undo"]');
+  await p.click('[data-mkt="box"]'); await p.evaluate(() => { MK.sel = -1; mkUpdate(); });
+  const nextTh = await p.evaluate(() => ST.mk_th);
+  await drag(at(.05, .70), at(.20, .85));
+  ok(await p.evaluate(t => MK.items.at(-1).th === t, nextTh), "A new mark uses the last thickness chosen");
+  await p.click('#mk [data-mk="undo"]');
   // colors are red, blue, yellow
   ok(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll("#mk [data-mkc]")].map(b => b.getAttribute("aria-label")))) === '["Red","Blue","Yellow"]', "Colors are red, blue and yellow");
   // text labels: blue = white on blue, yellow = red on yellow

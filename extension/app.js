@@ -906,7 +906,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 41${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 42${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -975,6 +975,7 @@ $("#soeInput").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) o
 //   {t:"img", id, x,y,w,h, c}  (an inserted picture; id is an image in D.images)
 const MK_TOOLS=["circle","box","arrow","pen","text","select"];
 const MK_COLORS=["#e5191c","#1f6fe0","#ffd60a"];
+const MK_TH=[0.45,0.7,1,1.5,2.2];   // line thickness steps; 1 = the standard weight for the photo's size
 // Text labels: the chosen color is the highlight; the words are white on red or blue, red on yellow.
 const mkInk=c=>c==="#ffd60a"?"#e5191c":c==="#ffffff"?"#111111":"#ffffff";
 const mkFont=sz=>`700 ${sz}px Arial, "Helvetica Neue", Helvetica, sans-serif`;
@@ -990,8 +991,8 @@ function mkBox(it){ if(it.t==="text"){ const b=mkTextBox(it); return {x:b.x,y:b.
   if(it.t==="pen"){ const xs=it.pts.map(p=>p[0]), ys=it.pts.map(p=>p[1]); const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}; }
   const n=mkNorm(it); return {x:n.x,y:n.y,w:n.w,h:n.h}; }
 // Draw the marks onto a 2D context whose units are photo pixels.
-function mkDraw(x,items,lw,insets){
-  for(const raw of items){ const it=mkNorm(raw); x.save(); x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
+function mkDraw(x,items,base,insets){
+  for(const raw of items){ const it=mkNorm(raw), lw=base*(MK_TH[raw.th??2]||1); x.save(); x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
     x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=lw*0.8;
     if(it.t==="text"){ const b=mkTextBox(it), r=it.size*0.22; x.shadowBlur=lw*0.9; x.beginPath(); x.roundRect?x.roundRect(b.x,b.y,b.w,b.h,r):x.rect(b.x,b.y,b.w,b.h); x.fill();
       x.shadowBlur=0; x.fillStyle=mkInk(it.c); x.font=mkFont(it.size); x.textBaseline="top";
@@ -1044,7 +1045,9 @@ function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
     if(it.t==="circle"){ const rx=it.w/2, ry=it.h/2, cx=it.x+rx, cy=it.y+ry; const d=Math.hypot((p.x-cx)/Math.max(rx,1),(p.y-cy)/Math.max(ry,1)); if(Math.abs(d-1)*Math.min(rx,ry)<=tol) return k; } }
   return -1; }
 function mkPush(){ MK.undo.push(JSON.stringify(MK.items)); if(MK.undo.length>100) MK.undo.shift(); }
-function mkUpdate(){ const el=$("#mk"); { const it=MK.items[MK.sel], on=(it&&it.t==="text")||MK.tool==="text", g=el.querySelector(".mk-tsize"); g.hidden=!on;
+function mkUpdate(){ const el=$("#mk"); { const it=MK.items[MK.sel], shape=it&&it.t!=="text", on=shape||(!it&&["circle","box","arrow","pen"].includes(MK.tool)), g=el.querySelector(".mk-thick"); g.hidden=!on;
+    const v=shape?(it.th??2):(ST.mk_th??2); g.querySelector('[data-mk="thinner"]').disabled=v<=0; g.querySelector('[data-mk="thicker"]').disabled=v>=MK_TH.length-1; }
+  { const it=MK.items[MK.sel], on=(it&&it.t==="text")||MK.tool==="text", g=el.querySelector(".mk-tsize"); g.hidden=!on;
     const L=Math.max(MK.W,MK.H), i=it&&it.t==="text"?MK_TS.findIndex(k=>Math.abs(k*L-it.size)<=1):(ST.mk_ts??2);
     g.querySelector('[data-mk="tsmaller"]').disabled=it&&it.t==="text"?it.size<=Math.max(12,Math.round(MK_TS[0]*L)):i<=0;
     g.querySelector('[data-mk="tbigger"]').disabled=it&&it.t==="text"?it.size>=Math.round(MK_TS.at(-1)*L):i>=MK_TS.length-1; } el.querySelector('[data-mk="undo"]').disabled=!MK.undo.length; el.querySelector('[data-mk="del"]').disabled=MK.sel<0; el.querySelector('[data-mk="clear"]').disabled=!MK.items.length; mkRender(); }
@@ -1075,11 +1078,14 @@ function mkResizeText(dir){ const it=MK.items[MK.sel];
     const b0=mkTextBox(it), cx=b0.x+b0.w/2, cy=b0.y+b0.h/2, ns=Math.max(12,Math.round(MK_TS[i]*L)); if(ns===it.size) return;
     mkPush(); it.size=ns; const b1=mkTextBox(it); it.x=cx-b1.w/2; it.y=cy-b1.h/2; ST.mk_ts=i; saveSettings(); mkUpdate(); return; }
   ST.mk_ts=Math.max(0,Math.min(MK_TS.length-1,(ST.mk_ts??2)+dir)); saveSettings(); mkUpdate(); toast(`Next label: size ${ST.mk_ts+1} of ${MK_TS.length}`,1600); }
+function mkThick(dir){ const it=MK.items[MK.sel];
+  if(it&&it.t!=="text"){ const n=Math.max(0,Math.min(MK_TH.length-1,(it.th??2)+dir)); if(n===(it.th??2)) return; mkPush(); it.th=n; ST.mk_th=n; saveSettings(); mkUpdate(); return; }
+  ST.mk_th=Math.max(0,Math.min(MK_TH.length-1,(ST.mk_th??2)+dir)); saveSettings(); mkUpdate(); toast(`Next mark: thickness ${ST.mk_th+1} of ${MK_TH.length}`,1600); }
 function mkDelete(){ if(MK.sel<0) return; mkPush(); MK.items.splice(MK.sel,1); MK.sel=-1; mkUpdate(); }
 async function mkInsert(file){ if(!file||!file.type||!file.type.startsWith("image/")){ toast("That isn't a picture."); return; }
   try{ const bytes=await toJpeg(file,1400,0.88); const id=newId(); D.images[id]=bytesToB64(bytes); const b=await mkDecode(id); MK.insets.set(id,b);
     let w=MK.W*0.38, h=w*b.height/b.width; if(h>MK.H*0.45){ h=MK.H*0.45; w=h*b.width/b.height; }
-    const m=Math.max(MK.W,MK.H)*0.03; mkPush(); MK.items.push({t:"img",id,x:MK.W-w-m,y:MK.H-h-m,w,h,c:MK.color}); MK.sel=MK.items.length-1; mkUpdate();
+    const m=Math.max(MK.W,MK.H)*0.03; mkPush(); MK.items.push({t:"img",id,x:MK.W-w-m,y:MK.H-h-m,w,h,c:MK.color,th:ST.mk_th??2}); MK.sel=MK.items.length-1; mkUpdate();
     toast("Picture added. Drag it to move it, or drag a corner to resize it.",3500); }
   catch(e){ toast("Couldn't add that picture: "+e.message,5000); } }
 async function mkClose(save){
@@ -1101,6 +1107,8 @@ async function mkClose(save){
     else if(b.dataset.mkc) mkSetColor(b.dataset.mkc);
     else if(b.dataset.mk==="undo"){ if(MK.undo.length){ MK.items=JSON.parse(MK.undo.pop()); MK.sel=-1; mkUpdate(); } }
     else if(b.dataset.mk==="del") mkDelete();
+    else if(b.dataset.mk==="thinner") mkThick(-1);
+    else if(b.dataset.mk==="thicker") mkThick(1);
     else if(b.dataset.mk==="tsmaller") mkResizeText(-1);
     else if(b.dataset.mk==="tbigger") mkResizeText(1);
     else if(b.dataset.mk==="clear"){ if(MK.items.length){ mkPush(); MK.items=[]; MK.sel=-1; mkUpdate(); toast("All marks cleared. Undo brings them back."); } }
@@ -1119,7 +1127,8 @@ async function mkClose(save){
     if(!d&&MK.tool==="select"){ MK.sel=-1; mkUpdate(); return; }
     if(d){ d.start=p; d.before=JSON.stringify(MK.items); d.orig=JSON.parse(JSON.stringify(MK.items[MK.sel])); MK.drag=d; mkUpdate(); return; }
     const c=MK.color, before=JSON.stringify(MK.items);
-    const it=MK.tool==="arrow"?{t:"arrow",x1:p.x,y1:p.y,x2:p.x,y2:p.y,c}:MK.tool==="pen"?{t:"pen",pts:[[Math.round(p.x),Math.round(p.y)]],c}:{t:MK.tool,x:p.x,y:p.y,w:0,h:0,c};
+    const th=ST.mk_th??2;
+    const it=MK.tool==="arrow"?{t:"arrow",x1:p.x,y1:p.y,x2:p.x,y2:p.y,c,th}:MK.tool==="pen"?{t:"pen",pts:[[Math.round(p.x),Math.round(p.y)]],c,th}:{t:MK.tool,x:p.x,y:p.y,w:0,h:0,c,th};
     MK.items.push(it); MK.sel=-1; MK.drag={kind:"new",start:p,before,id:e.pointerId}; mkRender(); });
   cv.addEventListener("pointermove",e=>{ const d=MK&&MK.drag; if(!d) return; e.preventDefault(); const p=mkPt(e), dx=p.x-d.start.x, dy=p.y-d.start.y;
     if(d.kind==="new"){ const it=MK.items.at(-1);
