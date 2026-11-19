@@ -334,6 +334,8 @@ input.pill.code{border:1px solid var(--edge);border-radius:999px;background:var(
   .meta{gap:5px}
 }
 
+/* No double-tap zoom on phones and tablets (pinch-zoom still works); taps also register without the zoom delay. */
+html,body,*{touch-action:manipulation}   /* every element: the rule doesn't pass into scrolling areas on its own */
 /* ---- Photo markup editor ---- */
 .mk,.mk *,.thumb,.thumb *{-webkit-tap-highlight-color:transparent}
 .mk{position:fixed;inset:0;z-index:35;background:#14181e;color:#eef1f5;display:flex;flex-direction:column;
