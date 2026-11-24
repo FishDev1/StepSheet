@@ -927,7 +927,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 51${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 52${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -1036,7 +1036,7 @@ function mkDraw(x,items,base,insets){
     if(it.t==="text"){ const b=mkTextBox(it), r=it.size*0.22; x.shadowBlur=lw*0.9; x.beginPath(); x.roundRect?x.roundRect(b.x,b.y,b.w,b.h,r):x.rect(b.x,b.y,b.w,b.h); x.fill();
       x.shadowBlur=0; x.fillStyle=mkInk(it.c); x.font=mkFont(it.size); x.textBaseline="top";
       b.lines.forEach((l,j)=>x.fillText(l,b.x+b.pad,b.y+b.pad+j*b.lh)); x.restore(); continue; }
-    if(it.t==="img"){ const b=insets.get(it.id); x.shadowBlur=lw*1.5; if(b) x.drawImage(b,it.x,it.y,it.w,it.h); else { x.fillStyle="#888"; x.fillRect(it.x,it.y,it.w,it.h); }
+    if(it.t==="img"){ const b=insets.get(it.id); x.shadowBlur=lw*1.5; if(b){ const q=it.cr; if(q) x.drawImage(b,q.x,q.y,q.w,q.h,it.x,it.y,it.w,it.h); else x.drawImage(b,it.x,it.y,it.w,it.h); } else { x.fillStyle="#888"; x.fillRect(it.x,it.y,it.w,it.h); }
       x.shadowBlur=0; x.lineWidth=lw*0.7; x.strokeRect(it.x,it.y,it.w,it.h); }
     else if(it.t==="box") x.strokeRect(it.x,it.y,it.w,it.h);
     else if(it.t==="circle"){ x.beginPath(); x.ellipse(it.x+it.w/2,it.y+it.h/2,Math.max(1,it.w/2),Math.max(1,it.h/2),0,0,Math.PI*2); x.stroke(); }
@@ -1053,7 +1053,9 @@ function mkDraw(x,items,base,insets){
 // crop can be widened again later. Marks stay in orig pixels; the editor shows and saves only the frame.
 const mkFull=o=>({x:0,y:0,w:o.width,h:o.height});
 function mkRegion(){ return MK.crop||{x:0,y:0,w:MK.OW,h:MK.OH}; }
-function mkView(){ const v=MK.tool==="crop"?{x:0,y:0,w:MK.OW,h:MK.OH}:mkRegion(); MK.cx=v.x; MK.cy=v.y; MK.W=v.w; MK.H=v.h; }
+// What the crop frame is over: the main photo, or (MK.ic) one inset picture shown on its own.
+function mkCropSrc(){ return MK.ic?{b:MK.ic.bmp,w:MK.ic.bmp.width,h:MK.ic.bmp.height}:{b:MK.orig,w:MK.OW,h:MK.OH}; }
+function mkView(){ const S=mkCropSrc(), v=MK.tool==="crop"?{x:0,y:0,w:S.w,h:S.h}:mkRegion(); MK.cx=v.x; MK.cy=v.y; MK.W=v.w; MK.H=v.h; }
 // Draw a finished photo (crop + marks) and store it; returns the new image id.
 async function mkFlatten(orig,items,insets,crop){ const R=crop||mkFull(orig), c=document.createElement("canvas"); c.width=Math.max(1,Math.round(R.w)); c.height=Math.max(1,Math.round(R.h));
   const x=c.getContext("2d"); x.translate(-R.x,-R.y); x.drawImage(orig,0,0); mkDraw(x,items,mkLW(R.w,R.h),insets);
@@ -1105,9 +1107,9 @@ function mkFit(){ if(!MK) return; const st=$("#mkStage"), cv=$("#mkCanvas"), r=s
   cv.style.width=Math.round(MK.W*sc)+"px"; cv.style.height=Math.round(MK.H*sc)+"px"; cv.width=Math.round(MK.W*sc*dpr); cv.height=Math.round(MK.H*sc*dpr); MK.dpr=dpr; mkRender(); }
 function mkRender(){ if(!MK) return; const cv=$("#mkCanvas"), x=cv.getContext("2d"), k=MK.scale*MK.dpr;
   x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,cv.width,cv.height); x.setTransform(k,0,0,k,-MK.cx*k,-MK.cy*k);
-  x.drawImage(MK.orig,0,0,MK.OW,MK.OH); mkDraw(x,MK.items,MK.lw,MK.insets);
-  if(MK.tool==="crop"&&MK.cr){ const c=MK.cr, u=1/MK.scale; x.save(); x.fillStyle="rgba(0,0,0,.55)";
-    x.fillRect(0,0,MK.OW,c.y); x.fillRect(0,c.y+c.h,MK.OW,MK.OH-c.y-c.h); x.fillRect(0,c.y,c.x,c.h); x.fillRect(c.x+c.w,c.y,MK.OW-c.x-c.w,c.h);
+  if(MK.tool==="crop"&&MK.ic) x.drawImage(MK.ic.bmp,0,0); else { x.drawImage(MK.orig,0,0,MK.OW,MK.OH); mkDraw(x,MK.items,MK.lw,MK.insets); }
+  if(MK.tool==="crop"&&MK.cr){ const c=MK.cr, u=1/MK.scale, S=mkCropSrc(); x.save(); x.fillStyle="rgba(0,0,0,.55)";
+    x.fillRect(0,0,S.w,c.y); x.fillRect(0,c.y+c.h,S.w,S.h-c.y-c.h); x.fillRect(0,c.y,c.x,c.h); x.fillRect(c.x+c.w,c.y,S.w-c.x-c.w,c.h);
     x.strokeStyle="#fff"; x.lineWidth=2*u; x.strokeRect(c.x,c.y,c.w,c.h); x.lineWidth=1*u; x.strokeStyle="rgba(255,255,255,.55)";
     for(const f of [1/3,2/3]){ x.beginPath(); x.moveTo(c.x+c.w*f,c.y); x.lineTo(c.x+c.w*f,c.y+c.h); x.moveTo(c.x,c.y+c.h*f); x.lineTo(c.x+c.w,c.y+c.h*f); x.stroke(); }
     { const L=Math.min(26*u,c.w/3,c.h/3), o=2.5*u; x.lineWidth=5*u; x.strokeStyle="#fff"; x.lineCap="square";   // corner brackets drawn inside the frame so they never get cut off
@@ -1151,7 +1153,12 @@ function mkResize(o,it,h,p,dx,dy){
   Object.assign(it,{x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)}); }
 function mkPush(){ MK.undo.push(JSON.stringify(MK.items)); if(MK.undo.length>100) MK.undo.shift(); }
 function mkRestore(snap){ const v=JSON.parse(snap); if(Array.isArray(v)) MK.items=v; else { MK.items=v.i; MK.crop=v.c; const R=mkRegion(); MK.lw=mkLW(R.w,R.h); mkView(); mkFit(); } }
-function mkApplyCrop(){ const c=MK.cr; MK.cr=null; if(!c) return; const full=c.x<=1&&c.y<=1&&c.w>=MK.OW-1&&c.h>=MK.OH-1;
+function mkApplyCrop(){ const c=MK.cr; MK.cr=null; if(!c) return; const S=mkCropSrc(), full=c.x<=1&&c.y<=1&&c.w>=S.w-1&&c.h>=S.h-1;
+  if(MK.ic){ const it=MK.items[MK.ic.idx]; MK.ic=null; if(!it) return;
+    const nc=full?null:{x:Math.round(c.x),y:Math.round(c.y),w:Math.round(c.w),h:Math.round(c.h)}; if(JSON.stringify(nc||null)===JSON.stringify(it.cr||null)) return;
+    // keep the picture's on-photo scale and its centre; the frame grows or shrinks with the crop
+    const oc=it.cr||{x:0,y:0,w:S.w,h:S.h}, k=it.w/oc.w, ctr=mkCenter(it), q=nc||{x:0,y:0,w:S.w,h:S.h};
+    mkPush(); it.w=q.w*k; it.h=q.h*k; it.x=ctr.x-it.w/2; it.y=ctr.y-it.h/2; if(nc) it.cr=nc; else delete it.cr; return; }
   const nc=full?null:{x:Math.round(c.x),y:Math.round(c.y),w:Math.round(c.w),h:Math.round(c.h)};
   if(JSON.stringify(nc)!==JSON.stringify(MK.crop)){ MK.undo.push(JSON.stringify({i:MK.items,c:MK.crop})); MK.crop=nc; const R=mkRegion(); MK.lw=mkLW(R.w,R.h); } }
 async function mkReplaceBase(file){ if(!file||!file.type||!file.type.startsWith("image/")){ toast("That isn't a picture."); return; }
@@ -1159,15 +1166,16 @@ async function mkReplaceBase(file){ if(!file||!file.type||!file.type.startsWith(
     MK.items=mkMapItems(MK.items,R,nb.width,nb.height); MK.orig.close?.(); MK.orig=nb; MK.origId=id; MK.OW=nb.width; MK.OH=nb.height; MK.crop=null; MK.undo=[]; MK.sel=-1;
     MK.lw=mkLW(MK.OW,MK.OH); mkView(); mkFit(); mkUpdate(); toast("Photo replaced. Your marks and pictures moved onto it.",3500); }
   catch(e){ toast("Couldn't use that picture: "+e.message,5000); } }
-function mkUpdate(){ const el=$("#mk"); el.querySelector(".mk-rot").hidden=!mkRotatable(MK.items[MK.sel]); el.querySelector(".mk-cropbar").hidden=MK.tool!=="crop"; { const it=MK.items[MK.sel], shape=it&&it.t!=="text", on=shape||(!it&&["circle","box","arrow","pen"].includes(MK.tool)), g=el.querySelector(".mk-thick"); g.hidden=!on;
+function mkUpdate(){ const el=$("#mk"); el.querySelector(".mk-rot").hidden=!mkRotatable(MK.items[MK.sel]); el.querySelector(".mk-cropbar").hidden=MK.tool!=="crop"; el.querySelector('[data-mk="cropreset"]').textContent=MK.ic?"Whole picture":"Full photo"; { const it=MK.items[MK.sel], shape=it&&it.t!=="text", on=shape||(!it&&["circle","box","arrow","pen"].includes(MK.tool)), g=el.querySelector(".mk-thick"); g.hidden=!on;
     const v=shape?(it.th??2):(ST.mk_th??2); g.querySelector('[data-mk="thinner"]').disabled=v<=0; g.querySelector('[data-mk="thicker"]').disabled=v>=MK_TH.length-1; }
   { const it=MK.items[MK.sel], on=(it&&it.t==="text")||MK.tool==="text", g=el.querySelector(".mk-tsize"); g.hidden=!on;
     const L=Math.max(MK.W,MK.H), i=it&&it.t==="text"?MK_TS.findIndex(k=>Math.abs(k*L-it.size)<=1):(ST.mk_ts??2);
     g.querySelector('[data-mk="tsmaller"]').disabled=it&&it.t==="text"?it.size<=Math.max(12,Math.round(MK_TS[0]*L)):i<=0;
     g.querySelector('[data-mk="tbigger"]').disabled=it&&it.t==="text"?it.size>=Math.round(MK_TS.at(-1)*L):i>=MK_TS.length-1; } el.querySelector('[data-mk="undo"]').disabled=!MK.undo.length; el.querySelector('[data-mk="del"]').disabled=MK.sel<0; el.querySelector('[data-mk="clear"]').disabled=!MK.items.length; mkRender(); }
 function mkSetTool(tl){ const was=MK.tool;
-  if(was==="crop"&&tl!=="crop"&&MK.cr) mkApplyCrop();
-  if(tl==="crop"&&was!=="crop"){ MK.prevTool=was; MK.sel=-1; MK.cr={...mkRegion()}; }
+  if(was==="crop"&&tl!=="crop"){ const ii=MK.ic?MK.ic.idx:null; if(MK.cr) mkApplyCrop(); MK.ic=null; if(ii!=null) MK.sel=ii; }
+  if(tl==="crop"&&was!=="crop"){ MK.prevTool=was; const it=MK.items[MK.sel], bmp=it&&it.t==="img"&&MK.insets.get(it.id);
+    if(bmp){ MK.ic={idx:MK.sel,bmp}; MK.cr=it.cr?{...it.cr}:{x:0,y:0,w:bmp.width,h:bmp.height}; } else MK.cr={...mkRegion()}; MK.sel=-1; }
   MK.tool=tl; if(tl!=="crop"){ ST.mk_tool=tl; saveSettings(); }
   if((tl==="crop")!==(was==="crop")&&MK.scale){ mkView(); mkFit(); } $("#mk").dataset.tool=tl; $("#mk").querySelectorAll("[data-mkt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mkt===tl))); if(MK.scale) mkUpdate(); }
 function mkSetColor(c){ MK.color=c; ST.mk_color=c; saveSettings(); $("#mk").querySelectorAll("[data-mkc]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.mkc===c)));
@@ -1224,8 +1232,8 @@ async function mkClose(save){
     if(b.dataset.mkt) mkSetTool(b.dataset.mkt);
     else if(b.dataset.mkc) mkSetColor(b.dataset.mkc);
     else if(b.dataset.mk==="undo"){ if(MK.undo.length){ if(MK.tool==="crop"){ MK.cr=null; mkSetTool(MK.prevTool||"circle"); } mkRestore(MK.undo.pop()); MK.sel=-1; mkUpdate(); } }
-    else if(b.dataset.mk==="cropok"){ mkSetTool(MK.prevTool||"circle"); mkUpdate(); }
-    else if(b.dataset.mk==="cropreset"){ MK.cr={x:0,y:0,w:MK.OW,h:MK.OH}; mkRender(); }
+    else if(b.dataset.mk==="cropok"){ mkSetTool(MK.ic?"select":(MK.prevTool||"circle")); mkUpdate(); }
+    else if(b.dataset.mk==="cropreset"){ const S=mkCropSrc(); MK.cr={x:0,y:0,w:S.w,h:S.h}; mkRender(); }
     else if(b.dataset.mk==="photo"){ $("#mkBase").value=""; $("#mkBase").click(); }
     else if(b.dataset.mk==="del") mkDelete();
     else if(b.dataset.mk==="rotl"||b.dataset.mk==="rotr"){ const it=MK.items[MK.sel]; if(mkRotatable(it)){ mkPush(); it.rot=mkSnapRot((it.rot||0)+(b.dataset.mk==="rotr"?1:-1)*Math.PI/12,true); if(!it.rot) delete it.rot; mkUpdate(); } }
@@ -1257,7 +1265,7 @@ async function mkClose(save){
     const it=MK.tool==="arrow"?{t:"arrow",x1:p.x,y1:p.y,x2:p.x,y2:p.y,c,th}:MK.tool==="pen"?{t:"pen",pts:[[Math.round(p.x),Math.round(p.y)]],c,th}:{t:MK.tool,x:p.x,y:p.y,w:0,h:0,c,th};
     MK.items.push(it); MK.sel=-1; MK.drag={kind:"new",start:p,before,id:e.pointerId}; mkRender(); });
   cv.addEventListener("pointermove",e=>{ const d=MK&&MK.drag; if(!d) return; e.preventDefault(); const p=mkPt(e), dx=p.x-d.start.x, dy=p.y-d.start.y;
-    if(d.kind==="crop"){ const o=d.orig, W=MK.OW, H=MK.OH, mn=Math.max(24,Math.min(W,H)*0.04), cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+    if(d.kind==="crop"){ const o=d.orig, S=mkCropSrc(), W=S.w, H=S.h, mn=Math.max(24,Math.min(W,H)*0.04), cl=(v,a,b)=>Math.max(a,Math.min(b,v));
       let x0=o.x, y0=o.y, x1=o.x+o.w, y1=o.y+o.h;
       if(d.h==="move"){ const mx=cl(dx,-o.x,W-x1), my=cl(dy,-o.y,H-y1); x0+=mx; x1+=mx; y0+=my; y1+=my; }
       else if(d.h==="new"){ x0=cl(Math.min(d.start.x,p.x),0,W); x1=cl(Math.max(d.start.x,p.x),0,W); y0=cl(Math.min(d.start.y,p.y),0,H); y1=cl(Math.max(d.start.y,p.y),0,H); }

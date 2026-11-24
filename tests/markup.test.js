@@ -207,6 +207,29 @@ run("photo markup", async b => {
   ok(Math.abs(aft.rx - bef.rx) < .02 && Math.abs(aft.ry - bef.ry) < .02, "The mark stays in the same spot on the new photo");
   await p.click('#mk [data-mk="done"]'); await p.waitForSelector("#mk", { state: "hidden" });
   ok(await p.evaluate(() => { const t = D.tasks[2]; return t.markup && t.markup.items.length === 1 && !t.markup.crop && t.image_id !== t.markup.orig; }), "Done saves the new photo with the mark");
+  // ---- Crop an inset picture ----
+  await p.click('[data-mkopen="2"]'); await p.waitForSelector("#mk:not([hidden])");
+  await p.evaluate(async () => { const id = D.tasks[3].image_id; MK.insets.set(id, await mkDecode(id)); MK.items.push({ t: "img", id, x: 100, y: 100, w: 300, h: 225, c: "#e5191c", th: 2 }); MK.sel = MK.items.length - 1; mkUpdate(); });
+  const ib = await p.evaluate(() => { const b = MK.insets.get(MK.items[MK.sel].id); return { w: b.width, h: b.height, ctr: mkCenter(MK.items[MK.sel]) }; });
+  await p.click('[data-mkt="crop"]');
+  ok(await p.evaluate(b => !!MK.ic && MK.W === b.w && MK.H === b.h, ib), "With an inset picture selected, Crop shows just that picture");
+  ok(await p.locator('#mk [data-mk="cropreset"]').innerText() === "Whole picture", "...and the reset button says Whole picture");
+  await p.evaluate(() => { const S = mkCropSrc(); MK.cr = { x: S.w * .25, y: S.h * .25, w: S.w * .5, h: S.h * .5 }; });
+  await p.click('#mk [data-mk="cropok"]');
+  const ic = await p.evaluate(() => { const it = MK.items.at(-1); return { cr: it.cr, w: it.w, h: it.h, ctr: mkCenter(it), sel: MK.sel === MK.items.length - 1, tool: MK.tool, main: MK.crop, W: MK.W, OW: MK.OW }; });
+  ok(ic.cr && Math.abs(ic.cr.w - ib.w / 2) <= 1 && Math.abs(ic.w - 150) < 1 && Math.abs(ic.h - 112.5) < 1, "Inset crop: the picture shows half as much at the same scale " + JSON.stringify(ic));
+  ok(Math.abs(ic.ctr.x - ib.ctr.x) < 1 && Math.abs(ic.ctr.y - ib.ctr.y) < 1 && ic.sel && ic.tool === "select", "...stays centred where it was, and stays selected");
+  ok(ic.main === null && ic.W === ic.OW, "Cropping an inset leaves the main photo alone");
+  const px = await p.evaluate(async () => { const c = document.createElement("canvas"); c.width = 100; c.height = 100; const x = c.getContext("2d"); const it = MK.items.at(-1);
+    mkDraw(x, [{ ...it, x: 0, y: 0, w: 100, h: 100 }], 1, MK.insets); return x.getImageData(50, 50, 1, 1).data[3]; });
+  ok(px === 255, "Cropped inset still draws");
+  await p.click('#mk [data-mk="undo"]'); ok(await p.evaluate(() => !MK.items.at(-1).cr && Math.abs(MK.items.at(-1).w - 300) < 1), "Undo takes the inset crop back off");
+  await p.click('#mk [data-mk="redo"]').catch(() => {});
+  await p.evaluate(() => { MK.sel = MK.items.length - 1; mkUpdate(); }); await p.click('[data-mkt="crop"]');
+  await p.evaluate(() => { const S = mkCropSrc(); MK.cr = { x: 0, y: 0, w: S.w * .6, h: S.h * .6 }; }); await p.click('#mk [data-mk="cropok"]');
+  await p.click('#mk [data-mk="done"]'); await p.waitForSelector("#mk", { state: "hidden" });
+  ok(await p.evaluate(() => { const d = parseSoe(new TextDecoder("iso-8859-1").decode(serializeSoe(D))); const it = d.tasks[2].markup.items.find(i => i.t === "img"); return it && it.cr && it.cr.w > 0; }), ".soe keeps the inset crop");
+  await p.evaluate(() => { D.tasks[2].markup.items = D.tasks[2].markup.items.filter(i => i.t !== "img"); });
   // From the step card: a step with an inset picture gets a better main photo
   await p.evaluate(async () => { const t = D.tasks[2]; t.markup.items.push({ t: "img", id: D.tasks[3].image_id, x: 500, y: 350, w: 250, h: 200, c: "#e5191c", th: 2 }); t.image_id = await mkFlatten(await mkDecode(t.markup.orig), t.markup.items, new Map([[D.tasks[3].image_id, await mkDecode(D.tasks[3].image_id)]]), null); });
   const card = p.evaluate(async () => { await setImages(2, [new File([window.__np], "better.png", { type: "image/png" })]); });
