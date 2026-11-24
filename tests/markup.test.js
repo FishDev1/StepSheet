@@ -167,6 +167,56 @@ run("photo markup", async b => {
   await p.evaluate(() => { D.tasks[1].markup = { orig: D.tasks[1].image_id, items: [] }; });
   await p.evaluate(() => document.querySelector('[data-rmimg="1"]').click());
   ok(await p.evaluate(() => !D.tasks[1].markup && !D.tasks[1].image_id), "Removing a photo removes its marks");
+  // ---- Crop ----
+  await p.evaluate(() => { D.tasks[2].image_id = D.tasks[0].image_id; D.tasks[3].image_id = D.tasks[0].image_id; render(); }); await p.waitForTimeout(300);
+  await p.click('[data-mkopen="2"]'); await p.waitForSelector("#mk:not([hidden])");
+  const full = await p.evaluate(() => ({ w: MK.OW, h: MK.OH }));
+  const cb = await p.locator("#mkCanvas").boundingBox();
+  const cdrag = async (x0, y0, x1, y1) => { await p.mouse.move(cb.x + cb.width * x0, cb.y + cb.height * y0); await p.mouse.down();
+    for (let k = 1; k <= 6; k++) await p.mouse.move(cb.x + cb.width * (x0 + (x1 - x0) * k / 6), cb.y + cb.height * (y0 + (y1 - y0) * k / 6)); await p.mouse.up(); };
+  await p.click('[data-mkt="circle"]'); await cdrag(.6, .6, .8, .8);   // a mark in the lower right
+  await p.click('[data-mkt="crop"]');
+  ok(await p.locator("#mk .mk-cropbar").isVisible(), "Crop shows Done cropping / Full photo");
+  // drag the top-left corner handle in to the middle
+  const cb2 = await p.locator("#mkCanvas").boundingBox();
+  await p.mouse.move(cb2.x + 2, cb2.y + 2); await p.mouse.down(); for (let k = 1; k <= 6; k++) await p.mouse.move(cb2.x + cb2.width * .5 * k / 6, cb2.y + cb2.height * .5 * k / 6); await p.mouse.up();
+  await p.click('#mk [data-mk="cropok"]');
+  const cr = await p.evaluate(() => ({ c: MK.crop, W: MK.W, H: MK.H, tool: MK.tool, bar: !document.querySelector("#mk .mk-cropbar").hidden }));
+  ok(cr.c && Math.abs(cr.c.x - full.w / 2) < full.w * .03 && Math.abs(cr.c.w - full.w / 2) < full.w * .03 && cr.W === cr.c.w && cr.tool === "circle" && !cr.bar, "Dragging the corner and Done cropping crops to the lower-right quarter " + JSON.stringify(cr));
+  await p.click('#mk [data-mk="done"]'); await p.waitForSelector("#mk", { state: "hidden" });
+  const cs = await p.evaluate(async () => { const t = D.tasks[2]; const b = await createImageBitmap(new Blob([b64ToBytes(D.images[t.image_id])], { type: "image/jpeg" }));
+    const o = await createImageBitmap(new Blob([b64ToBytes(D.images[t.markup.orig])], { type: "image/jpeg" })); return { w: b.width, h: b.height, ow: o.width, crop: t.markup.crop, n: t.markup.items.length }; });
+  ok(cs.crop && Math.abs(cs.w - cs.crop.w) <= 1 && Math.abs(cs.h - cs.crop.h) <= 1 && cs.ow === full.w && cs.n === 1, "Saved photo is the cropped size; the full original and the mark are kept " + JSON.stringify(cs));
+  ok(await p.evaluate(() => { const d = parseSoe(new TextDecoder("iso-8859-1").decode(serializeSoe(D))); return JSON.stringify(d.tasks[2].markup.crop) === JSON.stringify(D.tasks[2].markup.crop); }), ".soe keeps the crop");
+  // reopen: crop is still there and can be widened back out
+  await p.click('[data-mkopen="2"]'); await p.waitForSelector("#mk:not([hidden])");
+  ok(await p.evaluate(() => !!MK.crop && MK.W === MK.crop.w), "Reopening shows the cropped view");
+  await p.click('[data-mkt="crop"]'); ok(await p.evaluate(() => MK.W === MK.OW), "Crop tool shows the whole original again");
+  await p.click('#mk [data-mk="cropreset"]'); await p.click('#mk [data-mk="cropok"]');
+  ok(await p.evaluate(() => MK.crop === null && MK.W === MK.OW), "Full photo removes the crop");
+  await p.click('#mk [data-mk="undo"]'); ok(await p.evaluate(() => !!MK.crop), "Undo brings the crop back");
+  // ---- Replace the photo underneath, keeping marks ----
+  await p.evaluate(async () => { const c = document.createElement("canvas"); c.width = 800; c.height = 600; const x = c.getContext("2d"); x.fillStyle = "#3a3"; x.fillRect(0, 0, 800, 600);
+    window.__np = await new Promise(r => c.toBlob(r, "image/png")); });
+  const npB64 = await p.evaluate(async () => { const u = new Uint8Array(await window.__np.arrayBuffer()); let s = ""; for (const c of u) s += String.fromCharCode(c); return btoa(s); });
+  const npf = path.join(__dirname, "fixtures", "_newphoto.png"); fs.writeFileSync(npf, Buffer.from(npB64, "base64"));
+  const bef = await p.evaluate(() => { const R = MK.crop, n = mkNorm(MK.items[0]); return { rx: (n.x + n.w / 2 - R.x) / R.w, ry: (n.y + n.h / 2 - R.y) / R.h, id: MK.origId }; });
+  await p.locator("#mkBase").setInputFiles(npf); await p.waitForFunction(id => MK.origId !== id, bef.id);
+  const aft = await p.evaluate(() => { const n = mkNorm(MK.items[0]); return { rx: (n.x + n.w / 2) / MK.OW, ry: (n.y + n.h / 2) / MK.OH, w: MK.OW, h: MK.OH, crop: MK.crop, n: MK.items.length }; });
+  ok(aft.w === 800 && aft.h === 600 && aft.crop === null && aft.n === 1, "Photo button swaps the photo underneath and keeps the mark " + JSON.stringify(aft));
+  ok(Math.abs(aft.rx - bef.rx) < .02 && Math.abs(aft.ry - bef.ry) < .02, "The mark stays in the same spot on the new photo");
+  await p.click('#mk [data-mk="done"]'); await p.waitForSelector("#mk", { state: "hidden" });
+  ok(await p.evaluate(() => { const t = D.tasks[2]; return t.markup && t.markup.items.length === 1 && !t.markup.crop && t.image_id !== t.markup.orig; }), "Done saves the new photo with the mark");
+  // From the step card: a step with an inset picture gets a better main photo
+  await p.evaluate(async () => { const t = D.tasks[2]; t.markup.items.push({ t: "img", id: D.tasks[3].image_id, x: 500, y: 350, w: 250, h: 200, c: "#e5191c", th: 2 }); t.image_id = await mkFlatten(await mkDecode(t.markup.orig), t.markup.items, new Map([[D.tasks[3].image_id, await mkDecode(D.tasks[3].image_id)]]), null); });
+  const card = p.evaluate(async () => { await setImages(2, [new File([window.__np], "better.png", { type: "image/png" })]); });
+  await p.waitForSelector('#dlg [data-r="1"]'); ok(await p.locator("#dlg").innerText().then(t => /Keep the marks/.test(t)), "Adding a photo to a marked-up step asks whether to keep the marks");
+  await p.click('#dlg [data-r="1"]'); await card;
+  ok(await p.evaluate(() => { const t = D.tasks[2]; return t.markup && t.markup.items.length === 2 && t.markup.items.some(i => i.t === "img" && i.id === D.tasks[3].image_id) && t.image_title === "better.png"; }), "Keep marks: the inset picture and mark move onto the new photo");
+  const card2 = p.evaluate(async () => { await setImages(2, [new File([window.__np], "clean.png", { type: "image/png" })]); });
+  await p.waitForSelector('#dlg [data-r="0"]'); await p.click('#dlg [data-r="0"]'); await card2;
+  ok(await p.evaluate(() => !D.tasks[2].markup && D.tasks[2].image_title === "clean.png"), "Start clean: just the new photo");
+  fs.unlinkSync(npf);
   ok(!errs.length, "No console errors " + JSON.stringify(errs));
 
   // Real-world reopen paths: close & reopen the app (restored draft), and Save -> Open the .soe
