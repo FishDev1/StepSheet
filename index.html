@@ -421,6 +421,7 @@ html,body,*{touch-action:manipulation}   /* every element: the rule doesn't pass
   <div class="mk-tools" role="toolbar" aria-label="Markup tools">
     <div class="mk-group"><button type="button" class="mk-tool" data-mkt="circle" aria-pressed="false" title="Circle"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="8.5" ry="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Circle</span></button><button type="button" class="mk-tool" data-mkt="box" aria-pressed="false" title="Box"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Box</span></button><button type="button" class="mk-tool" data-mkt="arrow" aria-pressed="false" title="Arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L18 6M18 6h-7M18 6v7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Arrow</span></button><button type="button" class="mk-tool" data-mkt="pen" aria-pressed="false" title="Draw"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18c3-6 5-9 7-9s1 6 3 6 3-4 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Draw</span></button><button type="button" class="mk-tool" data-mkt="text" aria-pressed="false" title="Text label"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 9.5h7M12 9.5v6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Text</span></button><button type="button" class="mk-tool" data-mkt="select" aria-pressed="false" title="Move"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l11 7-5 1.3L9.7 18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Move</span></button><button type="button" class="mk-tool" data-mk="pic" title="Insert picture"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="11" y="11" width="7.5" height="6" rx="1" fill="currentColor"/></svg><span>Picture</span></button></div>
     <div class="mk-group mk-colors" role="radiogroup" aria-label="Color"><button type="button" class="mk-sw" data-mkc="#e5191c" role="radio" aria-checked="true" aria-label="Red" style="--c:#e5191c"></button><button type="button" class="mk-sw" data-mkc="#1f6fe0" role="radio" aria-checked="false" aria-label="Blue" style="--c:#1f6fe0"></button><button type="button" class="mk-sw" data-mkc="#ffd60a" role="radio" aria-checked="false" aria-label="Yellow" style="--c:#ffd60a"></button></div>
+    <div class="mk-group mk-rot" hidden><button type="button" class="mk-tool" data-mk="rotl" title="Turn left 15°"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5A8 8 0 1 1 4.5 12" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M8.6 1.8L8 5.6l3.8.7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Turn ↺</span></button><button type="button" class="mk-tool" data-mk="rotr" title="Turn right 15°"><svg viewBox="0 0 24 24" aria-hidden="true" style="transform:scaleX(-1)"><path d="M8 5.5A8 8 0 1 1 4.5 12" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><path d="M8.6 1.8L8 5.6l3.8.7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Turn ↻</span></button></div>
     <div class="mk-group mk-thick" hidden><button type="button" class="mk-tool" data-mk="thinner" title="Thinner lines"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Thinner</span></button><button type="button" class="mk-tool" data-mk="thicker" title="Thicker lines"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg><span>Thicker</span></button></div>
     <div class="mk-group mk-tsize" hidden><button type="button" class="mk-tool" data-mk="tsmaller" title="Smaller text"><b aria-hidden="true">A<small>−</small></b><span>Smaller</span></button><button type="button" class="mk-tool" data-mk="tbigger" title="Bigger text"><b aria-hidden="true">A<small>+</small></b><span>Bigger</span></button></div>
     <div class="mk-group"><button type="button" class="mk-tool" data-mk="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h10a6 6 0 010 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -3)"/></svg><span>Undo</span></button><button type="button" class="mk-tool" data-mk="del" title="Delete selected mark (Delete)" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Delete</span></button></div>
@@ -1344,7 +1345,7 @@ function renderOpt(){ const d=D;
     ${Object.entries(flags).map(([k,l])=>`<label class="chk"><input type="checkbox" id="sec_${k}" data-sec="${k}" ${isT(d.security[k])?"checked":""}> Allow ${l}</label>`).join("")}</div>
   <div class="card"><h3>Colors</h3>${["Check","Work Content","Verify","Safety","Quality","Border"].map(k=>`<div class="fr"><label for="c_${k.replace(/ /g,"")}">${k}</label><div style="display:flex;gap:8px;align-items:center">${k!=="Border"?shapeSVG(k,null,22):""}<input type="color" id="c_${k.replace(/ /g,"")}" data-color="${k}" value="${color(k).toLowerCase()}"></div></div>`).join("")}
     <button class="lbtn" data-act="resetcolors">Reset colors</button></div></div>
-    <p class="hint" style="margin-top:12px">StepSheet build 48${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
+    <p class="hint" style="margin-top:12px">StepSheet build 49${"launchQueue" in window?" · can open .soe files from Windows":""}<br>
       Last start: ${!("launchQueue" in window)?"this browser can't open files from Windows":!lastLaunch?"normal (the browser didn't start it as an app)":lastLaunch.files?`from a file (${esc(lastLaunch.names)})`:"as an app, but the browser passed no file"}</p>`; }
 
 /* ===================================================================== events */
@@ -1429,8 +1430,20 @@ function mkBox(it){ if(it.t==="text"){ const b=mkTextBox(it); return {x:b.x,y:b.
   if(it.t==="pen"){ const xs=it.pts.map(p=>p[0]), ys=it.pts.map(p=>p[1]); const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}; }
   const n=mkNorm(it); return {x:n.x,y:n.y,w:n.w,h:n.h}; }
 // Draw the marks onto a 2D context whose units are photo pixels.
+// Rotation: boxes, circles, labels and inserted pictures carry rot (radians) and turn about their centre.
+// Their x/y/w/h stay the unrotated box, so hit tests and resizing work in the mark's own frame.
+const mkRotatable=it=>!!it&&(it.t==="box"||it.t==="circle"||it.t==="img"||it.t==="text");
+function mkCenter(it){ const b=mkBox(it); return {x:b.x+b.w/2,y:b.y+b.h/2}; }
+function mkRotPt(p,c,a){ const sn=Math.sin(a), cs=Math.cos(a), dx=p.x-c.x, dy=p.y-c.y; return {x:c.x+dx*cs-dy*sn, y:c.y+dx*sn+dy*cs}; }
+const mkLocal=(p,it)=>it.rot&&mkRotatable(it)?mkRotPt(p,mkCenter(it),-it.rot):p;   // photo point -> the mark's unrotated frame
+const mkWorld=(p,it)=>it.rot&&mkRotatable(it)?mkRotPt(p,mkCenter(it),it.rot):p;    // and back
+function mkSnapRot(a,fine){ let deg=a*180/Math.PI; deg=((deg%360)+540)%360-180;
+  if(fine) deg=Math.round(deg/15)*15; else { const n=Math.round(deg/45)*45; if(Math.abs(deg-n)<=4) deg=n; }
+  return Math.abs(deg)<0.01?0:deg*Math.PI/180; }
 function mkDraw(x,items,base,insets){
-  for(const raw of items){ const it=mkNorm(raw), lw=base*(MK_TH[raw.th??2]||1); x.save(); x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
+  for(const raw of items){ const it=mkNorm(raw), lw=base*(MK_TH[raw.th??2]||1); x.save();
+    if(raw.rot&&mkRotatable(raw)){ const c=mkCenter(raw); x.translate(c.x,c.y); x.rotate(raw.rot); x.translate(-c.x,-c.y); }
+    x.strokeStyle=it.c; x.fillStyle=it.c; x.lineWidth=lw; x.lineCap="round"; x.lineJoin="round";
     x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=lw*0.8;
     if(it.t==="text"){ const b=mkTextBox(it), r=it.size*0.22; x.shadowBlur=lw*0.9; x.beginPath(); x.roundRect?x.roundRect(b.x,b.y,b.w,b.h,r):x.rect(b.x,b.y,b.w,b.h); x.fill();
       x.shadowBlur=0; x.fillStyle=mkInk(it.c); x.font=mkFont(it.size); x.textBaseline="top";
@@ -1464,16 +1477,23 @@ function mkRender(){ if(!MK) return; const cv=$("#mkCanvas"), x=cv.getContext("2
   x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,cv.width,cv.height); x.setTransform(k,0,0,k,0,0);
   x.drawImage(MK.orig,0,0,MK.W,MK.H); mkDraw(x,MK.items,MK.lw,MK.insets);
   if(MK.sel>=0&&MK.items[MK.sel]){ const it=MK.items[MK.sel], b=mkBox(it), u=1/MK.scale; x.save(); x.lineWidth=1.5*u; x.setLineDash([6*u,4*u]); x.strokeStyle="#fff"; x.shadowColor="rgba(0,0,0,.8)"; x.shadowBlur=3*u;
+    x.save(); if(it.rot&&mkRotatable(it)){ const c=mkCenter(it); x.translate(c.x,c.y); x.rotate(it.rot); x.translate(-c.x,-c.y); }
     x.strokeRect(b.x-6*u,b.y-6*u,b.w+12*u,b.h+12*u); x.setLineDash([]);
-    for(const h of mkHandles(it)){ x.beginPath(); x.arc(h.x,h.y,9*u,0,Math.PI*2); x.fillStyle="#fff"; x.fill(); x.lineWidth=2*u; x.strokeStyle="#2f7be0"; x.stroke(); } x.restore(); } }
-function mkHandles(it){ if(it.t==="pen") return [];
-  if(it.t==="text"){ const b=mkBox(it); return [{k:"nw",x:b.x,y:b.y},{k:"ne",x:b.x+b.w,y:b.y},{k:"sw",x:b.x,y:b.y+b.h},{k:"se",x:b.x+b.w,y:b.y+b.h}]; } if(it.t==="arrow") return [{k:"a",x:it.x1,y:it.y1},{k:"b",x:it.x2,y:it.y2}];
-  const n=mkNorm(it); return [{k:"nw",x:n.x,y:n.y},{k:"ne",x:n.x+n.w,y:n.y},{k:"sw",x:n.x,y:n.y+n.h},{k:"se",x:n.x+n.w,y:n.y+n.h}]; }
+    if(mkRotatable(it)){ x.beginPath(); x.moveTo(b.x+b.w/2,b.y-6*u); x.lineTo(b.x+b.w/2,b.y-MK_ROTOFF*u+10*u); x.stroke(); }
+    x.restore();
+    for(const h of mkHandles(it)){ if(h.k==="rot"){ x.beginPath(); x.arc(h.x,h.y,11*u,0,Math.PI*2); x.fillStyle="#2f7be0"; x.fill(); x.lineWidth=2*u; x.strokeStyle="#fff"; x.stroke();
+        x.beginPath(); x.arc(h.x,h.y,5*u,-2.4,1.2); x.lineWidth=1.8*u; x.stroke(); continue; } x.beginPath(); x.arc(h.x,h.y,9*u,0,Math.PI*2); x.fillStyle="#fff"; x.fill(); x.lineWidth=2*u; x.strokeStyle="#2f7be0"; x.stroke(); } x.restore(); } }
+const MK_ROTOFF=38;   // screen px from the top edge to the rotate handle
+function mkHandles(it){ if(it.t==="pen") return []; if(it.t==="arrow") return [{k:"a",x:it.x1,y:it.y1},{k:"b",x:it.x2,y:it.y2}];
+  const b=mkBox(it), u=MK?1/MK.scale:1;
+  const hs=[{k:"nw",x:b.x,y:b.y},{k:"ne",x:b.x+b.w,y:b.y},{k:"sw",x:b.x,y:b.y+b.h},{k:"se",x:b.x+b.w,y:b.y+b.h},{k:"rot",x:b.x+b.w/2,y:b.y-MK_ROTOFF*u}];
+  return hs.map(h=>({k:h.k,...mkWorld(h,it)})); }
 function mkPt(e){ const r=$("#mkCanvas").getBoundingClientRect(); return {x:(e.clientX-r.left)/MK.scale, y:(e.clientY-r.top)/MK.scale}; }
 function mkSegDist(p,a,b){ const dx=b[0]-a[0], dy=b[1]-a[1], L=dx*dx+dy*dy; let u=L?((p.x-a[0])*dx+(p.y-a[1])*dy)/L:0; u=Math.max(0,Math.min(1,u)); return Math.hypot(p.x-a[0]-u*dx,p.y-a[1]-u*dy); }
 // Which mark is under the point. "inside" also counts the inside of boxes, circles and pictures.
 function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
-  for(let k=MK.items.length-1;k>=0;k--){ const it=mkNorm(MK.items[k]);
+  const p0=p;
+  for(let k=MK.items.length-1;k>=0;k--){ const it=mkNorm(MK.items[k]); p=mkLocal(p0,MK.items[k]);
     if(it.t==="arrow"){ if(mkSegDist(p,[it.x1,it.y1],[it.x2,it.y2])<=tol) return k; continue; }
     if(it.t==="text"){ const b=mkBox(it); if(p.x>=b.x-tol&&p.x<=b.x+b.w+tol&&p.y>=b.y-tol&&p.y<=b.y+b.h+tol) return k; continue; }
     if(it.t==="pen"){ const P=it.pts; for(let j=0;j<P.length;j++) if(mkSegDist(p,P[j],P[Math.min(j+1,P.length-1)])<=tol) return k; continue; }
@@ -1482,8 +1502,18 @@ function mkHit(p,inside){ const tol=Math.max(MK.lw*1.5,14/MK.scale);
     if(it.t==="box"){ if(p.x<=it.x+tol||p.x>=it.x+it.w-tol||p.y<=it.y+tol||p.y>=it.y+it.h-tol) return k; continue; }
     if(it.t==="circle"){ const rx=it.w/2, ry=it.h/2, cx=it.x+rx, cy=it.y+ry; const d=Math.hypot((p.x-cx)/Math.max(rx,1),(p.y-cy)/Math.max(ry,1)); if(Math.abs(d-1)*Math.min(rx,ry)<=tol) return k; } }
   return -1; }
+// Resize from a handle; p/dx/dy are in the mark's own (unrotated) frame.
+function mkResize(o,it,h,p,dx,dy){
+  if(o.t==="text"){ const b0=mkTextBox(o); const ax=h.includes("w")?b0.x+b0.w:b0.x, ay=h.includes("n")?b0.y+b0.h:b0.y;
+    const nw=Math.max(10,(h.includes("w")?-1:1)*(p.x-ax)); const k=nw/b0.w; it.size=Math.max(8,Math.round(o.size*k)); const b1=mkTextBox(it);
+    it.x=h.includes("w")?ax-b1.w:ax; it.y=h.includes("n")?ay-b1.h:ay; return; }
+  if(o.t==="arrow"){ if(h==="a"){ it.x1=o.x1+dx; it.y1=o.y1+dy; } else { it.x2=o.x2+dx; it.y2=o.y2+dy; } return; }
+  const n=mkNorm(o); let x0=n.x, y0=n.y, x1=n.x+n.w, y1=n.y+n.h;
+  if(h.includes("w")) x0+=dx; else x1+=dx; if(h.includes("n")) y0+=dy; else y1+=dy;
+  if(o.t==="img"){ const ar=n.w/n.h; const w=Math.max(20,Math.abs(x1-x0)), hh=w/ar; if(h.includes("n")) y0=y1-hh; else y1=y0+hh; if(h.includes("w")) x0=x1-w; else x1=x0+w; }
+  Object.assign(it,{x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)}); }
 function mkPush(){ MK.undo.push(JSON.stringify(MK.items)); if(MK.undo.length>100) MK.undo.shift(); }
-function mkUpdate(){ const el=$("#mk"); { const it=MK.items[MK.sel], shape=it&&it.t!=="text", on=shape||(!it&&["circle","box","arrow","pen"].includes(MK.tool)), g=el.querySelector(".mk-thick"); g.hidden=!on;
+function mkUpdate(){ const el=$("#mk"); el.querySelector(".mk-rot").hidden=!mkRotatable(MK.items[MK.sel]); { const it=MK.items[MK.sel], shape=it&&it.t!=="text", on=shape||(!it&&["circle","box","arrow","pen"].includes(MK.tool)), g=el.querySelector(".mk-thick"); g.hidden=!on;
     const v=shape?(it.th??2):(ST.mk_th??2); g.querySelector('[data-mk="thinner"]').disabled=v<=0; g.querySelector('[data-mk="thicker"]').disabled=v>=MK_TH.length-1; }
   { const it=MK.items[MK.sel], on=(it&&it.t==="text")||MK.tool==="text", g=el.querySelector(".mk-tsize"); g.hidden=!on;
     const L=Math.max(MK.W,MK.H), i=it&&it.t==="text"?MK_TS.findIndex(k=>Math.abs(k*L-it.size)<=1):(ST.mk_ts??2);
@@ -1546,6 +1576,7 @@ async function mkClose(save){
     else if(b.dataset.mkc) mkSetColor(b.dataset.mkc);
     else if(b.dataset.mk==="undo"){ if(MK.undo.length){ MK.items=JSON.parse(MK.undo.pop()); MK.sel=-1; mkUpdate(); } }
     else if(b.dataset.mk==="del") mkDelete();
+    else if(b.dataset.mk==="rotl"||b.dataset.mk==="rotr"){ const it=MK.items[MK.sel]; if(mkRotatable(it)){ mkPush(); it.rot=mkSnapRot((it.rot||0)+(b.dataset.mk==="rotr"?1:-1)*Math.PI/12,true); if(!it.rot) delete it.rot; mkUpdate(); } }
     else if(b.dataset.mk==="thinner") mkThick(-1);
     else if(b.dataset.mk==="thicker") mkThick(1);
     else if(b.dataset.mk==="tsmaller") mkResizeText(-1);
@@ -1558,7 +1589,7 @@ async function mkClose(save){
   cv.addEventListener("pointerdown",e=>{ if(!MK||MK.drag||(e.pointerType==="mouse"&&e.button!==0)) return; e.preventDefault(); cv.setPointerCapture(e.pointerId);
     const p=mkPt(e), tol=Math.max(MK.lw*1.5,14/MK.scale), hr=22/MK.scale; let d=null;
     if(MK.sel>=0){ const it=MK.items[MK.sel]; const h=mkHandles(it).find(h=>Math.hypot(p.x-h.x,p.y-h.y)<=hr);
-      if(h) d={kind:"handle",h:h.k}; else if(mkHit(p,true)===MK.sel||(()=>{ const b=mkBox(it); return p.x>=b.x-tol&&p.x<=b.x+b.w+tol&&p.y>=b.y-tol&&p.y<=b.y+b.h+tol; })()) d={kind:"move"}; }
+      if(h) d=h.k==="rot"?{kind:"rotate"}:{kind:"handle",h:h.k}; else if(mkHit(p,true)===MK.sel||(()=>{ const b=mkBox(it), q=mkLocal(p,it); return q.x>=b.x-tol&&q.x<=b.x+b.w+tol&&q.y>=b.y-tol&&q.y<=b.y+b.h+tol; })()) d={kind:"move"}; }
     const wasSel=MK.sel;
     if(!d){ const k=MK.tool==="pen"?-1:mkHit(p,MK.tool==="select"); if(k>=0){ MK.sel=k; d={kind:"move"}; } }
     if(!d&&MK.tool==="text"){ MK.sel=-1; mkUpdate(); MK.drag={kind:"textnew",start:p}; return; }
@@ -1575,15 +1606,11 @@ async function mkClose(save){
       else if(it.t==="pen"){ const L=it.pts.at(-1); if(Math.hypot(p.x-L[0],p.y-L[1])>=Math.max(1.5,2/MK.scale)) it.pts.push([Math.round(p.x),Math.round(p.y)]); }
       else { it.w=dx; it.h=dy; if(e.shiftKey){ const s=Math.max(Math.abs(dx),Math.abs(dy)); it.w=Math.sign(dx||1)*s; it.h=Math.sign(dy||1)*s; } } }
     else { const o=d.orig, it=MK.items[MK.sel];
+      if(d.kind==="rotate"){ const c=mkCenter(o); const a=(o.rot||0)+Math.atan2(p.y-c.y,p.x-c.x)-Math.atan2(d.start.y-c.y,d.start.x-c.x); it.rot=mkSnapRot(a,e.shiftKey); if(!it.rot) delete it.rot; mkRender(); return; }
+      const R=o.rot&&mkRotatable(o)?o.rot:0;
+      if(R&&d.kind==="handle"){ const P=mkLocal(p,o), S=mkLocal(d.start,o); mkResize(o,it,d.h,P,P.x-S.x,P.y-S.y); const oc=mkCenter(o), nc=mkCenter(it), w=mkRotPt(nc,oc,R); it.x+=w.x-nc.x; it.y+=w.y-nc.y; mkRender(); return; }
       if(d.kind==="move"){ if(o.t==="arrow"){ it.x1=o.x1+dx; it.y1=o.y1+dy; it.x2=o.x2+dx; it.y2=o.y2+dy; } else if(o.t==="pen") it.pts=o.pts.map(q=>[q[0]+dx,q[1]+dy]); else { it.x=o.x+dx; it.y=o.y+dy; } }
-      else if(o.t==="text"){ const b0=mkTextBox(o); const ax=d.h.includes("w")?b0.x+b0.w:b0.x, ay=d.h.includes("n")?b0.y+b0.h:b0.y;
-        const nw=Math.max(10,(d.h.includes("w")?-1:1)*(p.x-ax)); const k=nw/b0.w; it.size=Math.max(8,Math.round(o.size*k)); const b1=mkTextBox(it);
-        it.x=d.h.includes("w")?ax-b1.w:ax; it.y=d.h.includes("n")?ay-b1.h:ay; }
-      else if(o.t==="arrow"){ if(d.h==="a"){ it.x1=o.x1+dx; it.y1=o.y1+dy; } else { it.x2=o.x2+dx; it.y2=o.y2+dy; } }
-      else { const n=mkNorm(o); let x0=n.x, y0=n.y, x1=n.x+n.w, y1=n.y+n.h;
-        if(d.h.includes("w")) x0+=dx; else x1+=dx; if(d.h.includes("n")) y0+=dy; else y1+=dy;
-        if(o.t==="img"){ const ar=n.w/n.h; const w=Math.max(20,Math.abs(x1-x0)), h=w/ar; if(d.h.includes("n")) y0=y1-h; else y1=y0+h; if(d.h.includes("w")) x0=x1-w; else x1=x0+w; }
-        Object.assign(it,{x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0)}); } }
+      else mkResize(o,it,d.h,p,dx,dy); }
     mkRender(); });
   const up=e=>{ const d=MK&&MK.drag; if(!d) return; MK.drag=null; try{ cv.releasePointerCapture(e.pointerId); }catch(_){}
     if(d.kind==="textnew"){ if(e.type==="pointerup") mkAddText(d.start); return; }

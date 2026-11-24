@@ -64,6 +64,33 @@ run("photo markup", async b => {
   await drag(at(.05, .70), at(.20, .85));
   ok(await p.evaluate(t => MK.items.at(-1).th === t, nextTh), "A new mark uses the last thickness chosen");
   await p.click('#mk [data-mk="undo"]');
+  // rotation: buttons, rotate handle with snapping, picking and resizing a rotated mark
+  await p.click('[data-mkt="select"]'); await p.evaluate(() => { MK.sel = 1; mkUpdate(); });   // the box
+  ok(await p.locator("#mk .mk-rot").isVisible(), "Turn buttons show for a selected box");
+  await p.click('#mk [data-mk="rotr"]'); await p.click('#mk [data-mk="rotr"]');
+  ok(await p.evaluate(() => Math.abs(MK.items[1].rot * 180 / Math.PI - 30) < 0.01), "Turn right twice = 30 degrees");
+  await p.click('#mk [data-mk="rotl"]'); await p.click('#mk [data-mk="rotl"]');
+  ok(await p.evaluate(() => !MK.items[1].rot), "Turn left twice = back to straight");
+  // drag the rotate handle a quarter turn around the centre -> snaps to 90
+  const rh = await p.evaluate(() => { const it = MK.items[1], h = mkHandles(it).find(h => h.k === "rot"), c = mkCenter(it), r = document.querySelector("#mkCanvas").getBoundingClientRect();
+    const toS = q => [r.left + q.x * MK.scale, r.top + q.y * MK.scale]; const R = Math.hypot(h.x - c.x, h.y - c.y); return { h: toS(h), end: toS({ x: c.x + R + 0.02 * R, y: c.y + 0.03 * R }) }; });
+  await drag(rh.h, rh.end, 12);
+  ok(await p.evaluate(() => Math.abs(MK.items[1].rot * 180 / Math.PI - 90) < 0.01), "Dragging the rotate handle turns the box and snaps to 90 degrees");
+  // a rotated box is picked by its rotated edge, not its old one
+  await p.evaluate(() => { MK.sel = -1; mkUpdate(); });
+  const edge = await p.evaluate(() => { const it = MK.items[1], b = mkBox(it), c = mkCenter(it); const w = mkRotPt({ x: b.x + b.w, y: c.y }, c, it.rot), r = document.querySelector("#mkCanvas").getBoundingClientRect(); return [r.left + w.x * MK.scale, r.top + w.y * MK.scale]; });
+  await p.mouse.click(...edge);
+  ok(await p.evaluate(() => MK.sel === 1), "Tapping the rotated box's edge selects it");
+  // resize from a corner keeps the angle and the opposite corner in place
+  const rz = await p.evaluate(() => { const it = MK.items[1], H = mkHandles(it), se = H.find(h => h.k === "se"), nw = H.find(h => h.k === "nw"), r = document.querySelector("#mkCanvas").getBoundingClientRect();
+    return { se: [r.left + se.x * MK.scale, r.top + se.y * MK.scale], nw: [nw.x, nw.y] }; });
+  await drag(rz.se, [rz.se[0] - 20, rz.se[1] + 25]);
+  const after = await p.evaluate(() => { const it = MK.items[1], nw = mkHandles(it).find(h => h.k === "nw"); return { rot: it.rot, nw: [nw.x, nw.y] }; });
+  ok(Math.abs(after.rot * 180 / Math.PI - 90) < 0.01 && Math.hypot(after.nw[0] - rz.nw[0], after.nw[1] - rz.nw[1]) < 1.5, "Resizing a rotated box keeps its angle and its opposite corner");
+  ok(await p.evaluate(() => mkHandles({ t: "arrow", x1: 0, y1: 0, x2: 5, y2: 5 }).every(h => h.k !== "rot") && !mkRotatable({ t: "pen" })), "Arrows and freehand have no rotate handle");
+  // undo all the rotation so the rest of the test is unchanged
+  while (await p.evaluate(() => !!MK.items[1].rot)) await p.click('#mk [data-mk="undo"]');
+  await p.evaluate(() => { MK.sel = -1; mkUpdate(); });
   // colors are red, blue, yellow
   ok(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll("#mk [data-mkc]")].map(b => b.getAttribute("aria-label")))) === '["Red","Blue","Yellow"]', "Colors are red, blue and yellow");
   // text labels: blue = white on blue, yellow = red on yellow
@@ -106,6 +133,7 @@ run("photo markup", async b => {
   fs.unlinkSync(inset);
   const ins = await p.evaluate(() => { const i = MK.items.at(-1); return { t: i.t, ar: i.w / i.h, inside: i.x + i.w <= MK.W && i.y + i.h <= MK.H, sel: MK.sel === MK.items.length - 1, has: !!D.images[i.id] }; });
   ok(ins.t === "img" && Math.abs(ins.ar - 4 / 3) < 0.01 && ins.inside && ins.sel && ins.has, "Inserted picture lands inside the photo, keeps its shape, and is selected");
+  await p.evaluate(() => { MK.items.at(-1).rot = Math.PI / 6; });   // turn the inserted picture 30 degrees
   // Done: photo is replaced by the flattened version, original kept
   await p.click('#mk [data-mk="done"]'); await p.waitForSelector("#mk", { state: "hidden" });
   const t1 = await p.evaluate(async () => { const t = D.tasks[0]; const dim = async id => { const b = await createImageBitmap(new Blob([b64ToBytes(D.images[id])], { type: "image/jpeg" })); return b.width + "x" + b.height; };
@@ -122,6 +150,7 @@ run("photo markup", async b => {
   const rt = await p.evaluate(() => { const x = new TextDecoder("iso-8859-1").decode(serializeSoe(D)); const d = parseSoe(x); const t = d.tasks[0];
     return { has: x.includes("<markup>"), orig: !!d.images[t.markup.orig], inset: !!d.images[t.markup.items.at(-1).id], flat: !!d.images[t.image_id], n: t.markup.items.length, same: new TextDecoder("iso-8859-1").decode(serializeSoe(d)) === x }; });
   ok(rt.has && rt.orig && rt.inset && rt.flat && rt.n === 5, ".soe keeps the marks, the original photo and the inserted picture");
+  ok(await p.evaluate(() => { const d = parseSoe(new TextDecoder("iso-8859-1").decode(serializeSoe(D))); return Math.abs(d.tasks[0].markup.items.at(-1).rot - Math.PI / 6) < 1e-9; }), ".soe keeps a mark's rotation");
   ok(rt.same, "Saving the reopened file again gives the same file");
   // PDF still builds and uses the marked-up photo
   const pdfOk = await p.evaluate(async () => { const bl = await buildInstructions(D, "x.pdf", () => {}, "en"); return bl.size > 1000; });
